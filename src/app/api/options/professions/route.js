@@ -1,6 +1,8 @@
 // src/app/api/options/professions/route.js
 import connectMongo from "@/lib/mongodb";
 import Profession from "@/models/Profession";
+export const dynamic = "force-dynamic";
+
 
 export async function GET(req) {
   await connectMongo();

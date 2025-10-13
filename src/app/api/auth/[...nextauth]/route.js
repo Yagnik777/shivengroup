@@ -4,6 +4,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import connectMongo from "@/lib/mongodb";
 import Admin from "@/models/Admin";
 import bcrypt from "bcryptjs";
+export const dynamic = "force-dynamic";
 
 const handler = NextAuth({
   providers: [

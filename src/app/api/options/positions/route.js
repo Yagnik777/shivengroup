@@ -1,6 +1,7 @@
 // /src/app/api/options/positions/route.js
 import connectMongo from "@/lib/mongodb";
 import Position from "@/models/Position";
+export const dynamic = "force-dynamic";
 
 export async function GET(req) {
   await connectMongo();
