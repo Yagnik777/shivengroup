@@ -1,4 +1,4 @@
-// models/Admin.js
+// shivengroup-frontend/models/Admin.js
 import mongoose from "mongoose";
 
 const AdminSchema = new mongoose.Schema({
@@ -7,4 +7,6 @@ const AdminSchema = new mongoose.Schema({
   password: { type: String, required: true },
 });
 
-export default mongoose.models.Admin || mongoose.model("Admin", AdminSchema);
+// Avoid model recompilation in dev (Next.js hot reload)
+const Admin = mongoose.models.Admin || mongoose.model("Admin", AdminSchema);
+export default Admin;
