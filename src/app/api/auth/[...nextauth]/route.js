@@ -1,4 +1,4 @@
-// app/api/admin/auth/[...nextauth]/route.js
+// shivengroup-frontend/src/app/api/auth/[...nextauth]/route.js
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import connectMongo from "@/lib/mongodb";

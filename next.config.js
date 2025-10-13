@@ -1,11 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  experimental: {
-    appDir: true, // enable App Router
-  },
+  experimental: { appDir: true },
   swcMinify: true,
-  output: "standalone", // easier Vercel deployment
+  output: "standalone",
 };
 
 module.exports = nextConfig;
