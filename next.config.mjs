@@ -1,4 +1,10 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {};
-
-export default nextConfig;
+const nextConfig = {
+    reactStrictMode: true,
+    experimental: {
+      appDir: true, // important for App Router
+    },
+  };
+  
+  module.exports = nextConfig;
+  
