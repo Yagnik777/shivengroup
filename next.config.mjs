@@ -2,9 +2,9 @@
 const nextConfig = {
     reactStrictMode: true,
     experimental: {
-      appDir: true, // important for App Router
+      appDir: true, // App Router
     },
   };
   
-  module.exports = nextConfig;
+  export default nextConfig;
   
