@@ -1,10 +1,11 @@
 // shivengroup-frontend/src/app/api/auth/[...nextauth]/route.js
+export const dynamic = "force-dynamic"
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import connectMongo from "@/lib/mongodb";
 import Admin from "@/models/Admin";
 import bcrypt from "bcryptjs";
-export const dynamic = "force-dynamic";
+;
 
 const handler = NextAuth({
   providers: [
