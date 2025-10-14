@@ -52,7 +52,9 @@ export default function NavBar({ links = [] }) {
                 <NavLink href="/profile">
                   Profile
                 </NavLink>
-
+                <NavLink href="/jobs">
+                  jobs
+                </NavLink>
                 <NavLink
                   isPrimary={true}
                   href="#"

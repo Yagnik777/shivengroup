@@ -16,6 +16,7 @@ export default function AdminLayout({ children }) {
     { name: "Users", href: "/admin/users" },
     { name: "Professions", href: "/admin/professions" },
     { name: "Positions", href: "/admin/positions" },
+    { name: "jobs", href: "/admin/jobs" },
   ];
 
   const handleLogout = async () => {
