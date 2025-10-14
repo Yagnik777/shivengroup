@@ -1,26 +1,32 @@
+// /app/admin/page.jsx
 "use client";
 
-import { useSession } from "next-auth/react";
-import { useEffect } from "react";
+import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function AdminDashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
   useEffect(() => {
-    // Redirect if not logged in
-    if (status === "unauthenticated") {
-      router.push("/admin/login");
+    if (status === "unauthenticated" || session?.user?.role !== "admin") {
+      router.replace("/admin-login");
     }
-  }, [status]);
+  }, [status, session]);
 
   if (status === "loading") return <p>Loading...</p>;
 
   return (
     <div className="p-8">
-      <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-      <p>Welcome, {session?.user?.name}</p>
+      <h1 className="text-3xl font-bold mb-4">Welcome, Admin!</h1>
+      <p className="mb-4">Email: {session.user.email}</p>
+      <button
+        onClick={() => signOut({ callbackUrl: "/admin-login" })}
+        className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+      >
+        Logout
+      </button>
     </div>
   );
 }

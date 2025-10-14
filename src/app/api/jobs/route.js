@@ -1,5 +1,5 @@
 export const dynamic = "force-dynamic";
-import connectMongo from "@/lib/mongodb";
+import connectMongo from "@/lib/mongodb"; // ✅ correct function
 import Job from "@/models/Job";
 
 // ✅ Get all jobs + filters
@@ -20,7 +20,7 @@ export async function GET(req) {
 
 // ✅ Add job
 export async function POST(req) {
-  await connectDB();
+  await connectMongo(); // ✅ use correct function
   const data = await req.json();
   const job = await Job.create(data);
   return new Response(JSON.stringify(job), { status: 201 });
@@ -28,7 +28,7 @@ export async function POST(req) {
 
 // ✅ Update job
 export async function PUT(req) {
-  await connectDB();
+  await connectMongo();
   const { id, ...data } = await req.json();
   const job = await Job.findByIdAndUpdate(id, data, { new: true });
   return new Response(JSON.stringify(job), { status: 200 });
@@ -36,7 +36,7 @@ export async function PUT(req) {
 
 // ✅ Delete job
 export async function DELETE(req) {
-  await connectDB();
+  await connectMongo();
   const { id } = await req.json();
   await Job.findByIdAndDelete(id);
   return new Response("Deleted", { status: 200 });

@@ -17,6 +17,8 @@ export default function AdminLayout({ children }) {
     { name: "Professions", href: "/admin/professions" },
     { name: "Positions", href: "/admin/positions" },
     { name: "jobs", href: "/admin/jobs" },
+    { name: "applications", href: "/admin/applications" },
+    { name: "candidates", href: "/admin/candidates" },
   ];
 
   const handleLogout = async () => {
@@ -50,14 +52,7 @@ export default function AdminLayout({ children }) {
           ))}
         </nav>
 
-        <div className="mt-auto pt-4">
-          <button
-            onClick={handleLogout}
-            className="w-full bg-red-600 hover:bg-red-700 py-2 rounded font-semibold"
-          >
-            Logout
-          </button>
-        </div>
+        
       </aside>
 
       <main className="flex-1 p-6 bg-gray-100">{children}</main>

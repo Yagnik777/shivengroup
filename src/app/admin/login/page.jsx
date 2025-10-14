@@ -1,71 +1,77 @@
+// /app/admin/login/page.jsx
 "use client";
 
-import { useState } from "react";
-import { signIn } from "next-auth/react";
+import { useState, useEffect } from "react";
+import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 export default function AdminLogin() {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const { data: session, status } = useSession();
   const router = useRouter();
+
+  // Redirect if already logged in as admin
+  useEffect(() => {
+    if (status === "authenticated" && session?.user?.role === "admin") {
+      router.replace("/admin/dashboard");
+    }
+  }, [status, session]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setLoading(true);
 
     const res = await signIn("credentials", {
       redirect: false,
-      email,
+      email: username, // username field
       password,
     });
 
-    if (!res.ok) {
-      setError(res.error || "Invalid email or password");
-    } else {
-      // Successful login → redirect to dashboard
-      router.push("/admin/dashboard");
+    if (res?.error) {
+      setError("Invalid username or password");
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <form onSubmit={handleSubmit} className="bg-white p-8 rounded shadow-md w-full max-w-md">
-        <h2 className="text-2xl font-bold mb-4">Admin Login</h2>
+    <div className="flex justify-center items-center min-h-screen bg-gray-100">
+      <form onSubmit={handleSubmit} className="w-full max-w-md p-8 bg-white rounded-lg shadow-lg">
+        <h1 className="text-3xl font-bold text-center mb-6">Admin Login</h1>
+
+        {error && (
+          <div className="bg-red-100 text-red-700 p-2 mb-4 rounded">
+            {error}
+          </div>
+        )}
 
         <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full p-2 mb-4 border rounded"
+          type="text"
+          placeholder="Username"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          className="w-full mb-4 p-2 border rounded"
         />
         <input
           type="password"
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full p-2 mb-4 border rounded"
+          className="w-full mb-4 p-2 border rounded"
         />
-
-        {error && <p className="text-red-500 mb-2">{error}</p>}
-
-        <div className="mt-4 text-center text-sm">
-          <span>Don't have an account? </span>
-          <button
-            type="button"
-            onClick={() => router.push("/admin/register")}
-            className="text-blue-600 hover:underline"
-          >
-            Register
-          </button>
-        </div>
 
         <button
           type="submit"
-          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 mt-4"
+          disabled={loading}
+          className={`w-full p-2 text-white rounded ${
+            loading ? "bg-blue-400" : "bg-blue-600 hover:bg-blue-700"
+          }`}
         >
-          Login
+          {loading ? "Logging in..." : "Login"}
         </button>
       </form>
     </div>
