@@ -1,8 +1,9 @@
 // shivengroup-frontend/src/app/api/admin/register/route.js
+export const dynamic = "force-dynamic";
 import connectMongo from "@/lib/mongodb";
 import Admin from "@/models/Admin"; // Create Admin schema similar to User
 import bcrypt from "bcryptjs";
-export const dynamic = "force-dynamic";
+
 
 export async function POST(req) {
   await connectMongo();
