@@ -1,5 +1,4 @@
 "use client";
-
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -17,29 +16,23 @@ export default function LoginPage() {
     setLoading(true);
 
     if (!email || !password) {
+      setError("Email and password are required");
       setLoading(false);
-      return setError("Email and password are required");
+      return;
     }
 
-    try {
-      const res = await signIn("credentials", {
-        redirect: false,
-        email,
-        password,
-      });
+    const res = await signIn("user-credentials", {
+      redirect: false,
+      email: email.trim(),
+      password: password.trim(),
+      callbackUrl: "/",
+    });
 
-      if (res?.error) {
-        setLoading(false);
-        return setError("Invalid email or password");
-      }
-
-      // ✅ Redirect to Home page after login
-      router.replace("/");
-    } catch (err) {
-      console.error(err);
-      setError("Something went wrong. Try again.");
-    } finally {
+    if (res?.error) {
+      setError("Invalid email or password");
       setLoading(false);
+    } else {
+      router.replace("/");
     }
   };
 
@@ -50,7 +43,7 @@ export default function LoginPage() {
         className="w-full max-w-md p-8 bg-white rounded-lg shadow-lg"
       >
         <h1 className="text-3xl font-bold text-center mb-6 text-gray-800">
-          Login
+          User Login
         </h1>
 
         {error && (
@@ -65,7 +58,9 @@ export default function LoginPage() {
           </label>
           <input
             id="email"
+            name="email"
             type="email"
+            autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -79,7 +74,9 @@ export default function LoginPage() {
           </label>
           <input
             id="password"
+            name="password"
             type="password"
+            autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -104,7 +101,7 @@ export default function LoginPage() {
           <a href="/register" className="text-blue-600 hover:underline">
             Sign Up
           </a>
-        </p>
+        </p>  
       </form>
     </div>
   );

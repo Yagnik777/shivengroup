@@ -1,25 +1,53 @@
 // src/app/api/apply/route.js
-export const dynamic = "force-dynamic";
-
 import connectMongo from "@/lib/mongodb";
 import Application from "@/models/Application";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+
+export const dynamic = "force-dynamic";
 
 export async function POST(req) {
   try {
     await connectMongo();
-    const data = await req.json();
-    const { jobId, fullName, email, phone, resumeUrl, coverLetter } = data;
 
-    if (!jobId || !fullName || !email) {
-      return new Response(JSON.stringify({ message: "Missing fields" }), { status: 400 });
+    // Get logged-in user
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return new Response(
+        JSON.stringify({ message: "You must be logged in to apply" }),
+        { status: 401 }
+      );
     }
 
-    const app = new Application({ jobId, fullName, email, phone, resumeUrl, coverLetter });
-    await app.save();
+    const { jobId, pricing, timeRequired, additionalInfo } = await req.json();
 
-    return new Response(JSON.stringify({ message: "Application submitted" }), { status: 201 });
+    // Validate required fields
+    if (!jobId || !pricing || !timeRequired || !additionalInfo) {
+      return new Response(
+        JSON.stringify({ message: "Missing required fields" }),
+        { status: 400 }
+      );
+    }
+
+    const app = await Application.create({
+      jobId,
+      pricing,
+      timeRequired,
+      additionalInfo,
+      email: session.user.email, // auto-fill email from logged-in user
+      name: session.user.name,   // auto-fill name from logged-in user
+      candidateId: session.user.id || null, // optional: link to user ID if you store it
+    });
+
+    return new Response(
+      JSON.stringify({ message: "Application submitted", app }),
+      { status: 201 }
+    );
   } catch (err) {
-    console.error(err);
-    return new Response(JSON.stringify({ message: "Server error" }), { status: 500 });
+    console.error("Failed to save application:", err);
+    return new Response(
+      JSON.stringify({ message: "Failed to save application" }),
+      { status: 500 }
+    );
   }
 }

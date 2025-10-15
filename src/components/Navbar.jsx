@@ -1,14 +1,13 @@
 "use client";
-
 import { useState } from "react";
 import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
 
-
+// NavLink component
 const NavLink = ({ children, href = "#", isPrimary = false, ...props }) => (
   <Link
     href={href}
-    {...props} // ✅ VERY IMPORTANT
+    {...props}
     className={`px-3 py-2 text-sm font-medium transition duration-150 ease-in-out ${
       isPrimary
         ? "text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md"
@@ -47,33 +46,19 @@ export default function NavBar({ links = [] }) {
             {user ? (
               <>
                 <span className="text-gray-700 font-medium">Hello, {user.name}</span>
-
-                {/* Profile Link */}
-                <NavLink href="/profile">
-                  Profile
-                </NavLink>
-                <NavLink href="/jobs">
-                  jobs
-                </NavLink>
-                <NavLink
-                  isPrimary={true}
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    signOut({ redirect: true, callbackUrl: "/login" });
-                  }}
+                <NavLink href="/profile">Profile</NavLink>
+                <NavLink href="/jobs">Jobs</NavLink>
+                <button
+                  onClick={() => signOut({ redirect: true, callbackUrl: "/login" })}
+                  className="px-3 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md"
                 >
                   Log Out
-                </NavLink>
+                </button>
               </>
             ) : (
               <>
-                <NavLink isPrimary={true} href="/login">
-                  Login
-                </NavLink>
-                <NavLink isPrimary={true} href="/register">
-                  Register
-                </NavLink>
+                <NavLink isPrimary={true} href="/login">Login</NavLink>
+                <NavLink isPrimary={true} href="/register">Register</NavLink>
               </>
             )}
           </div>
@@ -95,11 +80,7 @@ export default function NavBar({ links = [] }) {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth="2"
-                  d={
-                    isMenuOpen
-                      ? "M6 18L18 6M6 6l12 12"
-                      : "M4 6h16M4 12h16M4 18h16"
-                  }
+                  d={isMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"}
                 />
               </svg>
             </button>
@@ -115,31 +96,22 @@ export default function NavBar({ links = [] }) {
               {link.label}
             </NavLink>
           ))}
+
           <div className="px-3 pt-4 border-t mt-4">
             {user ? (
               <>
-                <NavLink href="/profile">
-                  Profile
-                </NavLink>
-                <NavLink
-                  isPrimary={true}
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    signOut({ callbackUrl: "/login" });
-                  }}
+                <NavLink href="/profile">Profile</NavLink>
+                <button
+                  onClick={() => signOut({ redirect: true, callbackUrl: "/login" })}
+                  className="w-full text-left px-3 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md"
                 >
                   Log Out
-                </NavLink>
+                </button>
               </>
             ) : (
               <>
-                <NavLink isPrimary={true} href="/login">
-                  Login
-                </NavLink>
-                <NavLink isPrimary={true} href="/register">
-                  Register
-                </NavLink>
+                <NavLink isPrimary={true} href="/login">Login</NavLink>
+                <NavLink isPrimary={true} href="/register">Register</NavLink>
               </>
             )}
           </div>

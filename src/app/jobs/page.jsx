@@ -2,21 +2,21 @@
 
 import { useEffect, useState } from "react";
 import MarkdownIt from "markdown-it";
+import { useSession } from "next-auth/react";
 
 const md = new MarkdownIt();
 
 export default function JobsPage() {
+  const { data: session } = useSession(); // logged-in user
   const [jobs, setJobs] = useState([]);
   const [selectedJob, setSelectedJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [type, setType] = useState("All");
   const [experienceLevel, setExperienceLevel] = useState("All");
   const [app, setApp] = useState({
-    fullName: "",
-    email: "",
-    phone: "",
-    resumeUrl: "",
-    coverLetter: "",
+    pricing: "",
+    timeRequired: "",
+    additionalInfo: "",
   });
   const [msg, setMsg] = useState("");
 
@@ -45,17 +45,29 @@ export default function JobsPage() {
   const handleApply = async (e) => {
     e.preventDefault();
     if (!selectedJob) return;
+
+    if (!session?.user?.email) {
+      setMsg("You must be logged in to apply.");
+      return;
+    }
+
     setMsg("Submitting...");
     try {
       const res = await fetch("/api/apply", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ jobId: selectedJob, ...app }),
+        body: JSON.stringify({
+          jobId: selectedJob,
+          email: session.user.email, // auto-filled from login
+          ...app,
+        }),
       });
+
       const json = await res.json();
-      if (!res.ok) throw new Error(json.message || "Failed");
+      if (!res.ok) throw new Error(json?.message || "Failed to save application");
+
       setMsg("Application submitted ✅");
-      setApp({ fullName: "", email: "", phone: "", resumeUrl: "", coverLetter: "" });
+      setApp({ pricing: "", timeRequired: "", additionalInfo: "" });
     } catch (err) {
       console.error(err);
       setMsg("Failed to submit ❌");
@@ -177,54 +189,62 @@ export default function JobsPage() {
                 <hr className="my-4" />
 
                 {/* Apply Form */}
-                <h3 className="text-lg font-semibold mb-3">Apply for this job</h3>
-                <form
-                  onSubmit={handleApply}
-                  className="grid grid-cols-1 gap-3 max-w-xl"
-                >
-                  <input
-                    required
-                    value={app.fullName}
-                    onChange={(e) => setApp({ ...app, fullName: e.target.value })}
-                    placeholder="Full name"
-                    className="w-full border rounded px-3 py-2"
-                  />
-                  <input
-                    required
-                    value={app.email}
-                    onChange={(e) => setApp({ ...app, email: e.target.value })}
-                    placeholder="Email"
-                    type="email"
-                    className="w-full border rounded px-3 py-2"
-                  />
-                  <input
-                    value={app.phone}
-                    onChange={(e) => setApp({ ...app, phone: e.target.value })}
-                    placeholder="Phone"
-                    className="w-full border rounded px-3 py-2"
-                  />
-                  <input
-                    value={app.resumeUrl}
-                    onChange={(e) => setApp({ ...app, resumeUrl: e.target.value })}
-                    placeholder="Resume URL (optional)"
-                    className="w-full border rounded px-3 py-2"
-                  />
-                  <textarea
-                    value={app.coverLetter}
-                    onChange={(e) => setApp({ ...app, coverLetter: e.target.value })}
-                    placeholder="Cover letter (optional)"
-                    className="w-full border rounded px-3 py-2"
-                    rows="5"
-                  />
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="submit"
-                      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                    >
-                      Submit Application
-                    </button>
-                    <span className="text-sm text-slate-600">{msg}</span>
+                <h3 className="text-xl font-semibold mb-2">Requirements</h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  Please submit your portfolio along with your resume. Also share your costing per website.
+                </p>
+
+                <form onSubmit={handleApply} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Pricing
+                      </label>
+                      <input
+                        required
+                        value={app.pricing}
+                        onChange={(e) => setApp({ ...app, pricing: e.target.value })}
+                        className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-300 outline-none"
+                        placeholder="Enter your pricing"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Time Required
+                      </label>
+                      <input
+                        required
+                        value={app.timeRequired}
+                        onChange={(e) => setApp({ ...app, timeRequired: e.target.value })}
+                        className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-300 outline-none"
+                        placeholder="Enter time required"
+                      />
+                    </div>
                   </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Why should we hire you / Additional information
+                    </label>
+                    <textarea
+                      required
+                      value={app.additionalInfo}
+                      onChange={(e) => setApp({ ...app, additionalInfo: e.target.value })}
+                      className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-300 outline-none"
+                      rows="3"
+                      placeholder="Explain why you're a good fit..."
+                    ></textarea>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-full text-lg mx-auto block"
+                  >
+                    Apply Now
+                  </button>
+
+                  <p className="text-sm text-gray-600 text-center">{msg}</p>
                 </form>
               </div>
             )}

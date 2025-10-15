@@ -1,38 +1,21 @@
-// shivengroup-frontend/src/app/api/auth/[...nextauth]/route.js
-export const dynamic = "force-dynamic";
-
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import connectMongo from "@/lib/mongodb";
 import User from "@/models/User";
 import bcrypt from "bcryptjs";
 
+export const dynamic = "force-dynamic";
+
 const handler = NextAuth({
   providers: [
     CredentialsProvider({
-      name: "Credentials",
+      id: "user-credentials",
+      name: "User",
       credentials: {
-        email: { label: "Email / Username", type: "text" },
+        email: { label: "Email", type: "text" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        // ✅ Hardcoded admin credentials
-        const adminUsername = "admin";
-        const adminPassword = "Admin@123";
-
-        if (
-          credentials.email === adminUsername &&
-          credentials.password === adminPassword
-        ) {
-          return {
-            id: "1",
-            name: "Admin",
-            email: "admin@company.com",
-            role: "admin",
-          };
-        }
-
-        // ✅ Normal user login via MongoDB
         try {
           await connectMongo();
           const user = await User.findOne({ email: credentials.email });
@@ -43,7 +26,7 @@ const handler = NextAuth({
 
           return { id: user._id, name: user.name, email: user.email, role: "user" };
         } catch (error) {
-          console.error("NextAuth authorize error:", error);
+          console.error(error);
           return null;
         }
       },
