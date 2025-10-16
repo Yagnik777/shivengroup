@@ -1,18 +1,41 @@
 import connectMongo from "@/lib/mongodb";
 import Application from "@/models/Application";
 
-export const dynamic = "force-dynamic";
+export async function DELETE(req, { params }) {
+  await connectMongo();
 
-export async function GET(req) {
+  // Make sure ID is correctly extracted
+  const id = params.id;
+
   try {
-    await connectMongo();
-    const parts = req.url.split("/");
-    const id = parts[parts.length - 1];
-    const app = await Application.findById(id).lean();
-    if (!app) return new Response("Not found", { status: 404 });
-    return new Response(JSON.stringify(app), { status: 200 });
+    // Use findByIdAndDelete with the correct ID
+    const deleted = await Application.findByIdAndDelete(id);
+
+    if (!deleted) {
+      return new Response(
+        JSON.stringify({ success: false, message: "Application not found" }),
+        {
+          status: 404,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    return new Response(
+      JSON.stringify({ success: true, message: "Application deleted successfully" }),
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   } catch (err) {
     console.error(err);
-    return new Response("Failed", { status: 500 });
+    return new Response(
+      JSON.stringify({ success: false, message: "Server error" }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
   }
 }

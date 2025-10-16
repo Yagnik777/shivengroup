@@ -1,31 +1,17 @@
-"use client";
-import { useEffect, useState } from "react";
+// src/app/api/applications/[id]/route.js
+import connectMongo from "@/lib/mongodb";
+import Application from "@/models/Application";
 
-export default function ApplicationDetail({ params }) {
-  const { id } = params;
-  const [app, setApp] = useState(null);
+export const DELETE = async (req, { params }) => {
+  try {
+    await connectMongo();
+    const { id } = params;
+    const deleted = await Application.findByIdAndDelete(id);
+    if (!deleted) return new Response("Application not found", { status: 404 });
 
-  useEffect(()=>{
-    fetch(`/api/applications/${id}`).then(r=>r.json()).then(setApp).catch(console.error);
-  },[id]);
-
-  if (!app) return <p className="p-6">Loading...</p>;
-
-  return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Application</h1>
-      <p><strong>Candidate:</strong> {app.name}</p>
-      <p><strong>Email:</strong> {app.email}</p>
-      <p><strong>Phone:</strong> {app.phone}</p>
-      <p><strong>Job ID:</strong> {app.jobId}</p>
-      <p className="mt-4"><strong>Cover Letter:</strong></p>
-      <div className="p-3 border rounded bg-white">{app.coverLetter || "—"}</div>
-
-      {app.candidateId && (
-        <div className="mt-4">
-          <a className="text-blue-600 hover:underline" href={`/admin/candidates/${app.candidateId}`}>Open Candidate Profile</a>
-        </div>
-      )}
-    </div>
-  );
-}
+    return new Response(JSON.stringify({ message: "Deleted successfully" }), { status: 200 });
+  } catch (err) {
+    console.error(err);
+    return new Response("Failed to delete", { status: 500 });
+  }
+};

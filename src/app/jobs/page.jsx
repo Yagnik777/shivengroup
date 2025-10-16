@@ -19,7 +19,9 @@ export default function JobsPage() {
     additionalInfo: "",
   });
   const [msg, setMsg] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
+  // Fetch Jobs
   const fetchJobs = async () => {
     setLoading(true);
     try {
@@ -42,6 +44,7 @@ export default function JobsPage() {
     fetchJobs();
   }, [type, experienceLevel]);
 
+  // Handle Apply
   const handleApply = async (e) => {
     e.preventDefault();
     if (!selectedJob) return;
@@ -51,26 +54,36 @@ export default function JobsPage() {
       return;
     }
 
+    setSubmitting(true);
     setMsg("Submitting...");
+
     try {
-      const res = await fetch("/api/apply", {
+      const res = await fetch("/api/applications", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           jobId: selectedJob,
-          email: session.user.email, // auto-filled from login
+          email: session.user.email,
+          name: session.user.name,
           ...app,
         }),
       });
 
       const json = await res.json();
-      if (!res.ok) throw new Error(json?.message || "Failed to save application");
+
+      if (!res.ok) {
+        setMsg(json?.message || "Failed to save application");
+        setSubmitting(false);
+        return;
+      }
 
       setMsg("Application submitted ✅");
       setApp({ pricing: "", timeRequired: "", additionalInfo: "" });
     } catch (err) {
       console.error(err);
-      setMsg("Failed to submit ❌");
+      setMsg("Network error, please try again ❌");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -79,12 +92,10 @@ export default function JobsPage() {
   return (
     <div className="min-h-screen bg-gray-100 py-8 w-full">
       <div className="max-w-[2000px] mx-auto px-6 flex flex-col gap-6">
-        {/* Header */}
         <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 px-4">
           Job Board
         </h1>
 
-        {/* Main container */}
         <div className="flex flex-col md:flex-row gap-6 bg-white rounded-lg shadow overflow-hidden h-[calc(100vh-120px)]">
           {/* Left: Job List */}
           <div className="md:w-1/3 w-full border-r overflow-auto p-4 h-full">
@@ -169,9 +180,6 @@ export default function JobsPage() {
                     <span className="px-3 py-1 rounded-full bg-slate-50 text-slate-700 text-sm">
                       {selectedJobData.experienceLevel}
                     </span>
-                    <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-sm">
-                      Salary Not specified
-                    </span>
                   </div>
                   <p className="text-sm text-slate-500 mt-2">{selectedJobData.location}</p>
                 </div>
@@ -181,8 +189,7 @@ export default function JobsPage() {
                 <div
                   className="prose max-w-none flex-1 overflow-auto"
                   dangerouslySetInnerHTML={{
-                    __html:
-                      md.render(selectedJobData.description || "No description provided."),
+                    __html: md.render(selectedJobData.description || "No description provided."),
                   }}
                 />
 
@@ -190,10 +197,6 @@ export default function JobsPage() {
 
                 {/* Apply Form */}
                 <h3 className="text-xl font-semibold mb-2">Requirements</h3>
-                <p className="text-sm text-gray-600 mb-4">
-                  Please submit your portfolio along with your resume. Also share your costing per website.
-                </p>
-
                 <form onSubmit={handleApply} className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
@@ -225,7 +228,7 @@ export default function JobsPage() {
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Why should we hire you / Additional information
+                      Additional Information
                     </label>
                     <textarea
                       required
@@ -239,12 +242,15 @@ export default function JobsPage() {
 
                   <button
                     type="submit"
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-full text-lg mx-auto block"
+                    disabled={submitting}
+                    className={`bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-full text-lg mx-auto block ${
+                      submitting ? "opacity-50 cursor-not-allowed" : ""
+                    }`}
                   >
-                    Apply Now
+                    {submitting ? "Submitting..." : "Apply Now"}
                   </button>
 
-                  <p className="text-sm text-gray-600 text-center">{msg}</p>
+                  {msg && <p className="text-sm text-gray-600 text-center">{msg}</p>}
                 </form>
               </div>
             )}

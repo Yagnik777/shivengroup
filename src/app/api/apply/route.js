@@ -1,4 +1,3 @@
-// src/app/api/apply/route.js
 import connectMongo from "@/lib/mongodb";
 import Application from "@/models/Application";
 import { getServerSession } from "next-auth/next";
@@ -10,7 +9,7 @@ export async function POST(req) {
   try {
     await connectMongo();
 
-    // Get logged-in user
+    // ✅ Check user login
     const session = await getServerSession(authOptions);
     if (!session?.user) {
       return new Response(
@@ -19,9 +18,9 @@ export async function POST(req) {
       );
     }
 
+    // ✅ Get form data
     const { jobId, pricing, timeRequired, additionalInfo } = await req.json();
 
-    // Validate required fields
     if (!jobId || !pricing || !timeRequired || !additionalInfo) {
       return new Response(
         JSON.stringify({ message: "Missing required fields" }),
@@ -29,14 +28,15 @@ export async function POST(req) {
       );
     }
 
+    // ✅ Save in database
     const app = await Application.create({
       jobId,
       pricing,
       timeRequired,
       additionalInfo,
-      email: session.user.email, // auto-fill email from logged-in user
-      name: session.user.name,   // auto-fill name from logged-in user
-      candidateId: session.user.id || null, // optional: link to user ID if you store it
+      email: session.user.email,
+      name: session.user.name,
+      candidateId: session.user.id || null,
     });
 
     return new Response(

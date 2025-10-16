@@ -1,6 +1,9 @@
 "use client";
-import React from "react";
-import DashboardContent from "@/components/DashboardContent"; // optional, can remove if unused
+
+import React, { useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+
 
 // 1️⃣ Utility Component: File Text Icon (Inline SVG)
 const FileTextIcon = (props) => (
@@ -27,6 +30,17 @@ const FileTextIcon = (props) => (
 
 // 2️⃣ Hero Section Component
 const HeroSection = () => {
+  const { data: session } = useSession();
+  const router = useRouter();
+
+  const handleGetStarted = () => {
+    if (session) {
+      router.push("/jobs"); // redirect to jobs page
+    } else {
+      router.push("/login"); // redirect to login page
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:py-24 lg:px-8">
       <div className="lg:grid lg:grid-cols-2 lg:gap-12 items-center">
@@ -42,12 +56,12 @@ const HeroSection = () => {
             process.
           </p>
           <div className="mt-10">
-            <a
-              href="/dashboard"
+            <button
+              onClick={handleGetStarted}
               className="inline-flex items-center px-8 py-3 border border-transparent text-lg font-medium rounded-xl shadow-xl text-white bg-blue-600 hover:bg-blue-700 transition duration-150 ease-in-out transform hover:scale-[1.02]"
             >
               Get Started - It's Free
-            </a>
+            </button>
           </div>
         </div>
 
@@ -68,34 +82,45 @@ const HeroSection = () => {
 };
 
 // 3️⃣ How It Works Section
-const HowItWorksSection = () => {
-  return (
-    <div className="w-full py-10 bg-white border-t border-gray-100">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <a
-          href="#"
-          className="text-base font-semibold text-blue-600 tracking-wider uppercase hover:text-blue-800 transition"
-        >
-          HOW IT WORKS
-        </a>
-      </div>
+const HowItWorksSection = () => (
+  <div className="w-full py-10 bg-white border-t border-gray-100">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <a
+        href="#"
+        className="text-base font-semibold text-blue-600 tracking-wider uppercase hover:text-blue-800 transition"
+      >
+        HOW IT WORKS
+      </a>
     </div>
-  );
-};
+  </div>
+);
 
-// 4️⃣ Main Dashboard Page (Default Export)
+// 4️⃣ Main Dashboard Page
 export default function DashboardPage() {
+  const { status } = useSession();
+  const router = useRouter();
+
+  // Redirect to login if unauthenticated
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/login");
+    }
+  }, [status, router]);
+
+  if (status === "loading") {
+    return (
+      <p className="p-6 text-center text-gray-600">Checking authentication...</p>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
-      {/* Replace NavBarPlaceholder with actual NavBar component if needed */}
       <main>
         <HeroSection />
         <HowItWorksSection />
 
-        {/* Additional content placeholder */}
-        <div className="h-64 bg-gray-100 flex items-center justify-center text-gray-500 border-t border-gray-200">
-          (Add your feature details, pricing, or other content here)
-        </div>
+        {/* Additional Dashboard Content */}
+        
       </main>
     </div>
   );

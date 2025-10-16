@@ -1,43 +1,63 @@
-export const dynamic = "force-dynamic";
-import connectMongo from "@/lib/mongodb"; // ✅ correct function
+import connectMongo from "@/lib/mongodb";
 import Job from "@/models/Job";
 
-// ✅ Get all jobs + filters
+export const dynamic = "force-dynamic";
+
+// GET jobs
 export async function GET(req) {
-  await connectMongo();
+  try {
+    await connectMongo();
+    const { searchParams } = new URL(req.url);
+    const type = searchParams.get("type");
+    const exp = searchParams.get("experienceLevel");
 
-  const { searchParams } = new URL(req.url);
-  const type = searchParams.get("type");
-  const experienceLevel = searchParams.get("experienceLevel");
+    const filter = {};
+    if (type && type !== "All") filter.type = type;
+    if (exp && exp !== "All") filter.experienceLevel = exp;
 
-  let filter = {};
-  if (type && type !== "All") filter.type = type;
-  if (experienceLevel && experienceLevel !== "All") filter.experienceLevel = experienceLevel;
-
-  const jobs = await Job.find(filter).sort({ createdAt: -1 });
-  return new Response(JSON.stringify(jobs), { status: 200 });
+    const jobs = await Job.find(filter).sort({ createdAt: -1 }).lean();
+    return new Response(JSON.stringify(jobs), { status: 200 });
+  } catch (err) {
+    console.error(err);
+    return new Response(JSON.stringify({ message: "Server error" }), { status: 500 });
+  }
 }
 
-// ✅ Add job
+// POST job
 export async function POST(req) {
-  await connectMongo(); // ✅ use correct function
-  const data = await req.json();
-  const job = await Job.create(data);
-  return new Response(JSON.stringify(job), { status: 201 });
+  try {
+    await connectMongo();
+    const data = await req.json();
+    const job = await Job.create(data);
+    return new Response(JSON.stringify(job), { status: 201 });
+  } catch (err) {
+    console.error(err);
+    return new Response(JSON.stringify({ message: "Failed to create job" }), { status: 500 });
+  }
 }
 
-// ✅ Update job
+// PUT job
 export async function PUT(req) {
-  await connectMongo();
-  const { id, ...data } = await req.json();
-  const job = await Job.findByIdAndUpdate(id, data, { new: true });
-  return new Response(JSON.stringify(job), { status: 200 });
+  try {
+    await connectMongo();
+    const { id, ...data } = await req.json();
+    const job = await Job.findByIdAndUpdate(id, data, { new: true });
+    return new Response(JSON.stringify(job), { status: 200 });
+  } catch (err) {
+    console.error(err);
+    return new Response(JSON.stringify({ message: "Failed to update job" }), { status: 500 });
+  }
 }
 
-// ✅ Delete job
+// DELETE job
 export async function DELETE(req) {
-  await connectMongo();
-  const { id } = await req.json();
-  await Job.findByIdAndDelete(id);
-  return new Response("Deleted", { status: 200 });
+  try {
+    await connectMongo();
+    const { id } = await req.json();
+    await Job.findByIdAndDelete(id);
+    return new Response(JSON.stringify({ message: "Deleted" }), { status: 200 });
+  } catch (err) {
+    console.error(err);
+    return new Response(JSON.stringify({ message: "Failed to delete job" }), { status: 500 });
+  }
 }

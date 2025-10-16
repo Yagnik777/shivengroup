@@ -4,14 +4,17 @@ import { cookies } from "next/headers";
 
 export async function GET() {
   try {
-    const token = cookies().get("token")?.value;
+    const cookieStore = await cookies(); // ✅ FIX - async required
+    const token = cookieStore.get("token")?.value;
+
     if (!token) return NextResponse.json({ loggedIn: false });
 
     const user = verifyToken(token);
     if (!user) return NextResponse.json({ loggedIn: false });
 
     return NextResponse.json({ loggedIn: true, user });
-  } catch {
+  } catch (err) {
+    console.error("Check error:", err);
     return NextResponse.json({ loggedIn: false });
   }
 }
