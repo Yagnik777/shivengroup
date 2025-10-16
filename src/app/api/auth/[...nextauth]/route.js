@@ -6,44 +6,75 @@ import bcrypt from "bcryptjs";
 
 export const dynamic = "force-dynamic";
 
-const handler = NextAuth({
+// --------------------
+// NextAuth options
+// --------------------
+export const authOptions = {
   providers: [
+    // ✅ Only USER login
     CredentialsProvider({
       id: "user-credentials",
-      name: "User",
+      name: "User Login",
       credentials: {
-        email: { label: "Email", type: "text" },
-        password: { label: "Password", type: "password" },
+        email: { label: "Email", type: "text", required: true },
+        password: { label: "Password", type: "password", required: true },
       },
       async authorize(credentials) {
-        try {
-          await connectMongo();
-          const user = await User.findOne({ email: credentials.email });
-          if (!user) return null;
+        await connectMongo();
 
-          const isValid = await bcrypt.compare(credentials.password, user.password);
-          if (!isValid) return null;
+        const user = await User.findOne({ email: credentials.email });
+        if (!user) return null;
 
-          return { id: user._id, name: user.name, email: user.email, role: "user" };
-        } catch (error) {
-          console.error(error);
-          return null;
-        }
+        const isValid = await bcrypt.compare(credentials.password, user.password);
+        if (!isValid) return null;
+
+        return {
+          id: user._id.toString(),
+          name: user.name,
+          email: user.email,
+          role: "user",
+        };
       },
     }),
   ],
+
   session: { strategy: "jwt" },
   secret: process.env.NEXTAUTH_SECRET,
+
+  pages: {
+    signIn: "/login",
+  },
+
   callbacks: {
     async jwt({ token, user }) {
-      if (user) token.user = user;
+      if (user) {
+        token.user = user;
+        token.role = "user";
+      }
       return token;
     },
+
     async session({ session, token }) {
       session.user = token.user;
       return session;
     },
   },
-});
+
+  cookies: {
+    sessionToken: {
+      name: "user-session",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+      },
+    },
+  },
+};
+
+// --------------------
+// NextAuth handler
+// --------------------
+const handler = NextAuth(authOptions);
 
 export { handler as GET, handler as POST };

@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-
+import AdminLayout from "@/components/admin/AdminLayout";
 export default function AdminJobs() {
   const [jobs, setJobs] = useState([]);
   const [form, setForm] = useState({ title: "", company: "", location: "", type: "Full-time", experienceLevel: "Entry", description: "" });
@@ -36,6 +36,7 @@ export default function AdminJobs() {
   };
 
   return (
+  <AdminLayout>  
     <div className="p-6 max-w-4xl mx-auto">
       <h1 className="text-3xl font-bold mb-6">Admin Job Management</h1>
 
@@ -70,5 +71,6 @@ export default function AdminJobs() {
         ))}
       </div>
     </div>
+    </AdminLayout>
   );
 }

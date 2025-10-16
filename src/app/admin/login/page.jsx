@@ -1,79 +1,60 @@
-// /app/admin/login/page.jsx
 "use client";
-
-import { useState, useEffect } from "react";
-import { signIn, useSession } from "next-auth/react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-export default function AdminLogin() {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const { data: session, status } = useSession();
+export default function AdminLoginPage() {
   const router = useRouter();
-
-  // Redirect if already logged in as admin
-  useEffect(() => {
-    if (status === "authenticated" && session?.user?.role === "admin") {
-      router.replace("/admin/dashboard");
-    }
-  }, [status, session]);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [err, setErr] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
-    setLoading(true);
-
-    const res = await signIn("credentials", {
-      redirect: false,
-      email: username, // username field
-      password,
-    });
-
-    if (res?.error) {
-      setError("Invalid username or password");
-      setLoading(false);
+    setErr("");
+    try {
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) return setErr(data.error || "Login failed");
+      router.push("/admin/dashboard");
+    } catch {
+      setErr("Network error");
     }
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-100">
-      <form onSubmit={handleSubmit} className="w-full max-w-md p-8 bg-white rounded-lg shadow-lg">
-        <h1 className="text-3xl font-bold text-center mb-6">Admin Login</h1>
-
-        {error && (
-          <div className="bg-red-100 text-red-700 p-2 mb-4 rounded">
-            {error}
-          </div>
-        )}
-
-        <input
-          type="text"
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          className="w-full mb-4 p-2 border rounded"
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="w-full mb-4 p-2 border rounded"
-        />
-
-        <button
-          type="submit"
-          disabled={loading}
-          className={`w-full p-2 text-white rounded ${
-            loading ? "bg-blue-400" : "bg-blue-600 hover:bg-blue-700"
-          }`}
-        >
-          {loading ? "Logging in..." : "Login"}
-        </button>
-      </form>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-lg">
+        <h2 className="text-2xl font-bold text-center mb-6">Admin Login</h2>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            required
+            onChange={(e) => setEmail(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            required
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <div className="text-red-500 min-h-[1rem] text-sm">{err}</div>
+          <button
+            type="submit"
+            className="w-full py-2 bg-blue-600 text-white font-semibold rounded hover:bg-blue-700 transition-colors"
+          >
+            Login
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

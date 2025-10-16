@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import AdminLayout from "@/components/admin/AdminLayout";
 
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
@@ -41,6 +42,7 @@ export default function AdminUsers() {
   if (error) return <p className="p-6 text-red-500">{error}</p>;
 
   return (
+    <AdminLayout>
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">Registered Users</h1>
 
@@ -83,5 +85,6 @@ export default function AdminUsers() {
         </tbody>
       </table>
     </div>
+    </AdminLayout>
   );
 }

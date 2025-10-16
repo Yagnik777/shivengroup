@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-
+import AdminLayout from "@/components/admin/AdminLayout";
 export default function AdminApplications() {
   const [apps, setApps] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -26,6 +26,7 @@ export default function AdminApplications() {
   if (loading) return <p className="p-6">Loading applications...</p>;
 
   return (
+    <AdminLayout>
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">Applications</h1>
       <table className="w-full table-auto border-collapse">
@@ -82,5 +83,6 @@ export default function AdminApplications() {
         </tbody>
       </table>
     </div>
+   </AdminLayout> 
   );
 }

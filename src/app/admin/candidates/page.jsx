@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
+import AdminLayout from "@/components/admin/AdminLayout";
 export default function CandidatesAdmin() {
   const [candidates, setCandidates] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,6 +25,7 @@ export default function CandidatesAdmin() {
   if (loading) return <p>Loading candidates...</p>;
 
   return (
+  <AdminLayout>   
     <div className="p-6 overflow-x-auto">
       <h1 className="text-xl font-bold mb-4">All Candidates</h1>
       <table className="w-full border text-sm">
@@ -78,5 +79,6 @@ export default function CandidatesAdmin() {
         </tbody>
       </table>
     </div>
+  </AdminLayout>
   );
 }
