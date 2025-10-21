@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import AdminLayout from "@/components/admin/AdminLayout";
+
 
 export default function CandidatesAdmin() {
   const [candidates, setCandidates] = useState([]);
@@ -41,7 +41,7 @@ export default function CandidatesAdmin() {
   const positions = ["All", ...new Set(candidates.map(c => c.position).filter(Boolean))];
 
   return (
-    <AdminLayout>
+    
       <div className="p-6 overflow-x-auto">
         <h1 className="text-xl font-bold mb-4">All Candidates</h1>
 
@@ -121,6 +121,6 @@ export default function CandidatesAdmin() {
           </tbody>
         </table>
       </div>
-    </AdminLayout>
+    
   );
 }

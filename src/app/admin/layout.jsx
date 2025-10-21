@@ -1,16 +1,24 @@
+// src/app/admin/layout.jsx
 "use client";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
+import SidebarLayout from "@/components/admin/SidebarLayout";
 
-export default function AdminLayout({ children }) {
+export default function AdminWrapper({ children }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [loading, setLoading] = useState(true);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedInAdmin, setIsLoggedInAdmin] = useState(false);
 
   useEffect(() => {
     let active = true;
 
     const checkAuth = async () => {
+      if (pathname === "/admin/login" || pathname === "/login") {
+        setLoading(false);
+        return;
+      }
+
       try {
         const res = await fetch("/api/admin/check", { cache: "no-store" });
         const data = await res.json();
@@ -18,9 +26,9 @@ export default function AdminLayout({ children }) {
         if (!active) return;
 
         if (data.loggedIn) {
-          setIsLoggedIn(true);
+          setIsLoggedInAdmin(true);
         } else {
-          router.replace("/admin/login"); // ✅ redirect if not logged in
+          router.replace("/admin/login"); // or "/login" depending on your route
         }
       } catch (err) {
         router.replace("/admin/login");
@@ -33,15 +41,9 @@ export default function AdminLayout({ children }) {
     return () => {
       active = false;
     };
-  }, [router]);
+  }, [pathname, router]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-lg">
-        Checking session...
-      </div>
-    );
-  }
+  if (loading) return <div className="min-h-screen flex items-center justify-center">Checking session...</div>;
 
-  return isLoggedIn ? <>{children}</> : null;
+  return isLoggedInAdmin ? <SidebarLayout>{children}</SidebarLayout> : null;
 }

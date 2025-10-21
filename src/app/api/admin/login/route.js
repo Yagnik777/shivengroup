@@ -9,8 +9,8 @@ const JWT_SECRET = process.env.JWT_SECRET;
 export async function POST(req) {
   try {
     const { email, password } = await req.json();
-
     await connectMongo();
+
     const admin = await Admin.findOne({ email: email.toLowerCase() });
     if (!admin)
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
@@ -22,20 +22,17 @@ export async function POST(req) {
     const token = jwt.sign(
       { id: admin._id, name: admin.name, email: admin.email },
       JWT_SECRET,
-      { expiresIn: "7d" } // ✅ Token expire in 7 days
+      { expiresIn: "7d" }
     );
 
     const response = NextResponse.json({ ok: true });
-
-    // ✅ Session stay even after tab close
     response.headers.append(
       "Set-Cookie",
-      `token=${token}; Path=/; HttpOnly; SameSite=Lax; Secure; Max-Age=604800`
+      `token=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=604800`
     );
 
     return response;
-  } catch (err) {
-    console.error(err);
+  } catch {
     return NextResponse.json({ error: "Login failed" }, { status: 500 });
   }
 }

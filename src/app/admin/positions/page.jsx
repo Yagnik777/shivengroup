@@ -2,7 +2,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import AdminLayout from "@/components/admin/AdminLayout";
 
 export default function AdminPositions() {
   const [positions, setPositions] = useState([]);
@@ -43,7 +42,7 @@ export default function AdminPositions() {
   };
 
   return (
-    <AdminLayout>
+    
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-4">Manage Positions</h1>
 
@@ -70,6 +69,6 @@ export default function AdminPositions() {
         ))}
       </ul>
     </div>
-    </AdminLayout>
+    
   );
 }

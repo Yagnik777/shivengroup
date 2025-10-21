@@ -1,5 +1,5 @@
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route"; // your NextAuth config
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 import connectMongo from "@/lib/mongodb";
 import Candidate from "@/models/Candidate";
 import fs from "fs";
@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export async function POST(req) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    if (!session?.user?.email || !session?.user?.id) {
       return new Response(JSON.stringify({ message: "User not logged in" }), { status: 401 });
     }
 
@@ -29,12 +29,12 @@ export async function POST(req) {
     }
 
     // Check if candidate already exists
-    let candidate = await Candidate.findOne({ email: userEmail });
+    let candidate = await Candidate.findOne({ userId: session.user.id });
 
     if (candidate) {
-      // Update existing
+      // Update existing candidate
       candidate = await Candidate.findOneAndUpdate(
-        { email: userEmail },
+        { userId: session.user.id },
         {
           fullName: formData.get("fullName"),
           mobile: formData.get("mobile"),
@@ -53,8 +53,9 @@ export async function POST(req) {
         { new: true }
       );
     } else {
-      // Create new
+      // Create new candidate
       candidate = await Candidate.create({
+        userId: session.user.id, // ✅ FIX
         email: userEmail,
         fullName: formData.get("fullName"),
         mobile: formData.get("mobile"),
@@ -79,7 +80,7 @@ export async function POST(req) {
   }
 }
 
-// GET all candidates (optional, admin use)
+// GET all candidates
 export async function GET() {
   try {
     await connectMongo();

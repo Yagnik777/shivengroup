@@ -1,19 +1,32 @@
-// src/models/Application.js
 import mongoose from "mongoose";
 
-const ApplicationSchema = new mongoose.Schema(
-  {
-    jobId: { type: mongoose.Schema.Types.ObjectId, ref: "Job", required: true },
-    name: { type: String },
-    email: { type: String, required: true },          // user email from login
-    candidateId: { type: mongoose.Schema.Types.ObjectId, ref: "User", default: null },
-    pricing: { type: String, required: true },
-    timeRequired: { type: String, required: true },
-    additionalInfo: { type: String, required: true },
-    status: { type: String, enum: ["Pending", "Reviewed", "Accepted", "Rejected"], default: "Pending" },
-    
+const applicationSchema = new mongoose.Schema({
+  job: { type: mongoose.Schema.Types.ObjectId, ref: "Job", required: true },
+  candidate: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+  name: { type: String, required: true },
+  email: { type: String, required: true },
+  phone: String,
+  linkedIn: String,
+  portfolio: String,
+  price: Number,
+  estimatedDays: Number,
+  coverLetter: String,
+  attachments: [
+    {
+      name: String,
+      url: String,
+      data: Buffer,
+      type: String,
+    }
+  ],
+  jobCategory: String,
+  jobType: String,
+  experienceLevel: String,
+  status: { 
+    type: String, 
+    enum: ["pending", "approved", "rejected"], 
+    default: "pending" 
   },
-  { timestamps: true }
-);
+}, { timestamps: true });
 
-export default mongoose.models.Application || mongoose.model("Application", ApplicationSchema);
+export default mongoose.models.Application || mongoose.model("Application", applicationSchema);

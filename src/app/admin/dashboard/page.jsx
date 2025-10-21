@@ -1,5 +1,5 @@
 "use client";
-import AdminLayout from "@/components/admin/AdminLayout";
+import AdminLayout from "../layout";
 
 export default function AdminDashboard() {
   return (

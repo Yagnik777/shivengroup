@@ -3,257 +3,269 @@
 import { useEffect, useState } from "react";
 import MarkdownIt from "markdown-it";
 import { useSession } from "next-auth/react";
+import 'tailwindcss/tailwind.css';
 
-const md = new MarkdownIt();
+const md = new MarkdownIt({ html: true, linkify: true, typographer: true });
 
 export default function JobsPage() {
-  const { data: session } = useSession(); // logged-in user
+  const { data: session } = useSession();
   const [jobs, setJobs] = useState([]);
   const [selectedJob, setSelectedJob] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [type, setType] = useState("All");
-  const [experienceLevel, setExperienceLevel] = useState("All");
+
+  // Filters
+  const [categories, setCategories] = useState([]);
+  const [categoryFilter, setCategoryFilter] = useState("All");
+  const [jobTypes, setJobTypes] = useState([]);
+  const [jobTypeFilter, setJobTypeFilter] = useState("All");
+  const [experienceLevels, setExperienceLevels] = useState([]);
+  const [experienceFilter, setExperienceFilter] = useState("All");
+  const [showFilters, setShowFilters] = useState(false); // ✅ Mobile toggle
+
+  // Application
+  const [showForm, setShowForm] = useState(false);
   const [app, setApp] = useState({
+    name: "",
+    email: "",
+    phone: "",
     pricing: "",
     timeRequired: "",
     additionalInfo: "",
+    linkedIn: "",
+    portfolio: "",
+    resume: null
   });
   const [msg, setMsg] = useState("");
   const [submitting, setSubmitting] = useState(false);
-
-  // Fetch Jobs
-  const fetchJobs = async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (type !== "All") params.set("type", type);
-      if (experienceLevel !== "All") params.set("experienceLevel", experienceLevel);
-
-      const res = await fetch(`/api/jobs?${params.toString()}`);
-      const data = await res.json();
-      setJobs(data);
-    } catch (err) {
-      console.error(err);
-      setJobs([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [appliedJobs, setAppliedJobs] = useState([]);
 
   useEffect(() => {
+    if (session?.user) {
+      setApp((prev) => ({
+        ...prev,
+        name: session.user.name || "",
+        email: session.user.email || "",
+      }));
+    }
+  }, [session]);
+
+  useEffect(() => {
+    const fetchJobs = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch("/api/jobs");
+        const data = await res.json();
+        const publishedJobs = data.filter(j => j.published === true);
+
+        setCategories([...new Set(publishedJobs.map(j => j.jobCategory))]);
+        setJobTypes([...new Set(publishedJobs.map(j => j.type))]);
+        setExperienceLevels([...new Set(publishedJobs.map(j => j.experienceLevel))]);
+
+        let filtered = publishedJobs;
+        if (categoryFilter !== "All") filtered = filtered.filter(j => j.jobCategory === categoryFilter);
+        if (jobTypeFilter !== "All") filtered = filtered.filter(j => j.type === jobTypeFilter);
+        if (experienceFilter !== "All") filtered = filtered.filter(j => j.experienceLevel === experienceFilter);
+
+        setJobs(filtered);
+      } catch (err) {
+        console.error(err);
+        setJobs([]);
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchJobs();
-  }, [type, experienceLevel]);
+  }, [categoryFilter, jobTypeFilter, experienceFilter]);
 
-  // Handle Apply
-  const handleApply = async (e) => {
-    e.preventDefault();
-    if (!selectedJob) return;
+  useEffect(() => {
+    const fetchApplications = async () => {
+      if (!session?.user?.email) return;
+      try {
+        const res = await fetch("/api/applications");
+        const data = await res.json();
+        const myApps = data.filter(a => a.email === session.user.email);
+        setAppliedJobs(myApps.map(a => a.job?._id?.toString() || a.job.toString()));
+      } catch (err) {
+        console.error("Error fetching applications:", err);
+      }
+    };
+    fetchApplications();
+  }, [session]);
 
+  const selectedJobData = jobs.find(j => j._id === selectedJob);
+
+  const handleApplyClick = () => {
     if (!session?.user?.email) {
       setMsg("You must be logged in to apply.");
       return;
     }
+    if (appliedJobs.includes(selectedJob)) {
+      setMsg("You have already applied for this job ✅");
+      return;
+    }
+    setShowForm(true);
+    setMsg("");
+  };
+
+  const handleResumeUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) setApp((prev) => ({ ...prev, resume: file }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedJob) return setMsg("Please select a job.");
+    if (!app.resume) return setMsg("Please upload your resume.");
 
     setSubmitting(true);
     setMsg("Submitting...");
 
+    const formData = new FormData();
+    formData.append("jobId", selectedJob);
+    formData.append("name", app.name);
+    formData.append("email", app.email);
+    formData.append("phone", app.phone);
+    formData.append("pricing", app.pricing);
+    formData.append("timeRequired", app.timeRequired);
+    formData.append("additionalInfo", app.additionalInfo);
+    formData.append("linkedIn", app.linkedIn);
+    formData.append("portfolio", app.portfolio);
+    formData.append("resume", app.resume);
+    formData.append("jobCategory", selectedJobData.jobCategory);
+    formData.append("jobType", selectedJobData.type);
+    formData.append("experienceLevel", selectedJobData.experienceLevel);
+
     try {
-      const res = await fetch("/api/applications", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          jobId: selectedJob,
-          email: session.user.email,
-          name: session.user.name,
-          ...app,
-        }),
-      });
+      const res = await fetch("/api/applications", { method: "POST", body: formData });
+      const result = await res.json();
+      if (!res.ok) return setMsg(result.message || "Failed to apply.");
 
-      const json = await res.json();
-
-      if (!res.ok) {
-        setMsg(json?.message || "Failed to save application");
-        setSubmitting(false);
-        return;
-      }
-
+      setAppliedJobs(prev => [...prev, selectedJob]);
       setMsg("Application submitted ✅");
-      setApp({ pricing: "", timeRequired: "", additionalInfo: "" });
+
+      setApp({
+        name: session.user.name || "",
+        email: session.user.email || "",
+        phone: "",
+        pricing: "",
+        timeRequired: "",
+        additionalInfo: "",
+        linkedIn: "",
+        portfolio: "",
+        resume: null
+      });
+      setShowForm(false);
     } catch (err) {
       console.error(err);
-      setMsg("Network error, please try again ❌");
-    } finally {
-      setSubmitting(false);
+      setMsg("Network error ❌");
     }
+    setSubmitting(false);
   };
 
-  const selectedJobData = jobs.find((j) => j._id === selectedJob);
-
   return (
-    <div className="min-h-screen bg-gray-100 py-8 w-full">
-      <div className="max-w-[2000px] mx-auto px-6 flex flex-col gap-6">
-        <h1 className="text-3xl md:text-4xl font-extrabold text-slate-900 px-4">
-          Job Board
-        </h1>
+    <div className="min-h-screen bg-gray-100 py-8">
+      <div className="max-w-[1600px] mx-auto px-4 flex flex-col gap-6">
+        <h1 className="text-3xl font-extrabold text-gray-800 text-center md:text-left">Job Board</h1>
 
-        <div className="flex flex-col md:flex-row gap-6 bg-white rounded-lg shadow overflow-hidden h-[calc(100vh-120px)]">
-          {/* Left: Job List */}
-          <div className="md:w-1/3 w-full border-r overflow-auto p-4 h-full">
-            {loading ? (
-              <p className="text-sm text-slate-500">Loading jobs...</p>
-            ) : jobs.length === 0 ? (
-              <p className="text-sm text-slate-500">No jobs found.</p>
-            ) : (
-              jobs.map((job) => (
-                <div
-                  key={job._id}
-                  onClick={() => setSelectedJob(job._id)}
-                  className={`cursor-pointer p-4 rounded-lg mb-3 transition-shadow border ${
-                    selectedJob === job._id
-                      ? "border-blue-400 bg-gradient-to-r from-white to-slate-50 shadow-md"
-                      : "bg-white/90 hover:shadow-md"
-                  }`}
-                >
-                  <h3 className="font-semibold text-slate-900">{job.title}</h3>
-                  <p className="text-xs text-slate-500 mt-1">
-                    {job.type} • {job.location}
-                  </p>
-                  <p className="text-xs text-slate-400">{job.experienceLevel}</p>
+        <div className="flex flex-col md:flex-row gap-6 bg-white rounded-xl shadow overflow-hidden min-h-[80vh]">
+
+          {/* Job List */}
+          <div className="md:w-1/3 w-full border-b md:border-b-0 md:border-r overflow-auto p-4 bg-gray-50">
+            {loading ? <p>Loading jobs...</p> :
+              jobs.length === 0 ? <p>No jobs available.</p> :
+              jobs.map(job => (
+                <div key={job._id} onClick={() => setSelectedJob(job._id)}
+                  className={`cursor-pointer p-4 mb-3 rounded-lg border transition-all duration-200 ${selectedJob === job._id ? "border-blue-500 bg-blue-50 shadow-lg" : "bg-white hover:shadow-md"}`}>
+                  <h3 className="font-semibold text-lg">{job.title}</h3>
+                  <p className="text-sm text-gray-600">{job.company} • {job.location}</p>
+                  <p className="text-xs text-gray-500">{job.jobCategory} • {job.type} • {job.experienceLevel}</p>
                 </div>
-              ))
-            )}
+              ))}
           </div>
 
-          {/* Right: Filters + Details + Apply */}
-          <div className="md:w-2/3 w-full flex flex-col p-6 overflow-auto gap-4">
-            {/* Filters */}
-            <div className="flex gap-4 mb-4 flex-wrap">
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-slate-600">Job Type</label>
-                <select
-                  value={type}
-                  onChange={(e) => setType(e.target.value)}
-                  className="text-sm border rounded px-2 py-1"
-                >
-                  <option>All</option>
-                  <option>Full-time</option>
-                  <option>Part-time</option>
-                  <option>Freelance</option>
-                  <option>Contract</option>
-                </select>
-              </div>
-              <div className="flex items-center gap-2">
-                <label className="text-sm text-slate-600">Experience</label>
-                <select
-                  value={experienceLevel}
-                  onChange={(e) => setExperienceLevel(e.target.value)}
-                  className="text-sm border rounded px-2 py-1"
-                >
-                  <option>All</option>
-                  <option>Entry</option>
-                  <option>Mid</option>
-                  <option>Senior</option>
-                </select>
-              </div>
+          {/* Right Section */}
+          <div className="md:w-2/3 w-full flex flex-col md:flex-row">
+
+            {/* Mobile Filter Toggle Button */}
+            <div className="flex md:hidden justify-end p-2">
+              <button onClick={() => setShowFilters(!showFilters)} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
+                {showFilters ? "Hide Filters" : "Show Filters"}
+              </button>
             </div>
 
-            {!selectedJob && (
-              <div className="bg-white p-8 rounded-lg shadow flex-1 flex items-center justify-center">
-                Please select a job from the list to view details.
-              </div>
-            )}
+            {/* Filters */}
+            <div className={`md:w-1/4 w-full p-4 border-t md:border-t-0 md:border-l flex flex-col gap-3 bg-gray-50 transition-all duration-300 ${showFilters ? "block" : "hidden md:block"}`}>
+              <h3 className="font-semibold mb-2">Filters</h3>
+              <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="border p-2 rounded w-full">
+                <option value="All">All Categories</option>
+                {categories.map((c, i) => <option key={i}>{c}</option>)}
+              </select>
+              <select value={jobTypeFilter} onChange={(e) => setJobTypeFilter(e.target.value)} className="border p-2 rounded w-full">
+                <option value="All">All Job Types</option>
+                {jobTypes.map((t, i) => <option key={i}>{t}</option>)}
+              </select>
+              <select value={experienceFilter} onChange={(e) => setExperienceFilter(e.target.value)} className="border p-2 rounded w-full">
+                <option value="All">All Experience Levels</option>
+                {experienceLevels.map((e, i) => <option key={i}>{e}</option>)}
+              </select>
+            </div>
 
-            {selectedJob && !selectedJobData && (
-              <p className="text-red-500">Job not found.</p>
-            )}
+            {/* Job Details */}
+            <div className="md:w-3/4 w-full p-6 overflow-auto">
+              {!selectedJobData ? (
+                <p className="text-gray-500">Select a job to see details</p>
+              ) : (
+                <div className="space-y-4">
+                  <h2 className="text-2xl font-bold">{selectedJobData.title}</h2>
+                  <p className="text-sm text-gray-600">{selectedJobData.company} • {selectedJobData.location}</p>
+                  <p className="text-sm text-gray-500">{selectedJobData.jobCategory} • {selectedJobData.type} • {selectedJobData.experienceLevel}</p>
 
-            {selectedJobData && (
-              <div className="bg-white p-8 rounded-lg shadow flex-1 flex flex-col gap-4">
-                <div>
-                  <h1 className="text-2xl md:text-3xl font-bold text-slate-900">
-                    {selectedJobData.title}
-                  </h1>
-                  <div className="flex gap-2 mt-3 flex-wrap">
-                    <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-sm">
-                      {selectedJobData.type}
-                    </span>
-                    <span className="px-3 py-1 rounded-full bg-slate-50 text-slate-700 text-sm">
-                      {selectedJobData.experienceLevel}
-                    </span>
-                  </div>
-                  <p className="text-sm text-slate-500 mt-2">{selectedJobData.location}</p>
+                  <div className="prose max-w-full mt-4" dangerouslySetInnerHTML={{ __html: md.render(selectedJobData.description || "") }} />
+
+                  {selectedJobData.requirements && (
+                    <div className="mt-4">
+                      <h3 className="text-lg font-semibold mb-2">Requirements</h3>
+                      <ul className="list-disc ml-6 space-y-1 text-gray-700">
+                        {selectedJobData.requirements.split(",").map((req, i) => <li key={i}>{req.trim()}</li>)}
+                      </ul>
+                    </div>
+                  )}
+
+                  {appliedJobs.includes(selectedJob) ? (
+                    <p className="mt-6 text-green-600 font-semibold">✅ You have already applied for this job</p>
+                  ) : !showForm ? (
+                    <button onClick={handleApplyClick} className="bg-blue-600 text-white px-6 py-2 rounded mt-6 hover:bg-blue-700 transition w-full md:w-auto">
+                      Apply Now
+                    </button>
+                  ) : (
+                    <form onSubmit={handleSubmit} className="space-y-3 mt-4">
+                      <input type="text" required value={app.name} disabled className="border p-2 rounded w-full bg-gray-100" />
+                      <input type="email" required value={app.email} disabled className="border p-2 rounded w-full bg-gray-100" />
+                      <input type="text" required value={app.phone} placeholder="Mobile / Phone" onChange={(e) => setApp({...app, phone: e.target.value})} className="border p-2 rounded w-full" />
+                      <input type="text" required value={app.pricing} placeholder="Pricing" onChange={(e) => setApp({...app, pricing: e.target.value})} className="border p-2 rounded w-full" />
+                      <input type="text" required value={app.timeRequired} placeholder="Time Required" onChange={(e) => setApp({...app, timeRequired: e.target.value})} className="border p-2 rounded w-full" />
+                      <textarea required value={app.additionalInfo} placeholder="Why Should We Hire You/Additional Info" onChange={(e) => setApp({...app, additionalInfo: e.target.value})} className="border p-2 rounded w-full" />
+
+                      <input type="text" required value={selectedJobData.jobCategory} disabled className="border p-2 rounded w-full bg-gray-100" />
+                      <input type="text" required value={selectedJobData.type} disabled className="border p-2 rounded w-full bg-gray-100" />
+                      <input type="text" required value={selectedJobData.experienceLevel} disabled className="border p-2 rounded w-full bg-gray-100" />
+                      <input type="url" placeholder="LinkedIn Profile URL" value={app.linkedIn} onChange={(e) => setApp({...app, linkedIn: e.target.value})} className="border p-2 rounded w-full" />
+                      <input type="url" placeholder="Portfolio URL" value={app.portfolio} onChange={(e) => setApp({...app, portfolio: e.target.value})} className="border p-2 rounded w-full" />
+
+                      <label className="block text-sm font-medium">Upload Resume (PDF/DOC)</label>
+                      <input type="file" accept=".pdf,.doc,.docx" required onChange={handleResumeUpload} className="border p-2 rounded w-full" />
+                      {app.resume && <p className="text-sm text-gray-600 mt-1">Selected File: {app.resume.name}</p>}
+
+                      <button disabled={submitting} className="bg-blue-600 text-white px-6 py-2 rounded mt-2 hover:bg-blue-700 transition w-full md:w-auto">
+                        {submitting ? "Submitting..." : "Submit Application"}
+                      </button>
+                      {msg && <p className="text-sm text-gray-600">{msg}</p>}
+                    </form>
+                  )}
                 </div>
+              )}
+            </div>
 
-                <hr className="my-4" />
-
-                <div
-                  className="prose max-w-none flex-1 overflow-auto"
-                  dangerouslySetInnerHTML={{
-                    __html: md.render(selectedJobData.description || "No description provided."),
-                  }}
-                />
-
-                <hr className="my-4" />
-
-                {/* Apply Form */}
-                <h3 className="text-xl font-semibold mb-2">Requirements</h3>
-                <form onSubmit={handleApply} className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Pricing
-                      </label>
-                      <input
-                        required
-                        value={app.pricing}
-                        onChange={(e) => setApp({ ...app, pricing: e.target.value })}
-                        className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-300 outline-none"
-                        placeholder="Enter your pricing"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Time Required
-                      </label>
-                      <input
-                        required
-                        value={app.timeRequired}
-                        onChange={(e) => setApp({ ...app, timeRequired: e.target.value })}
-                        className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-300 outline-none"
-                        placeholder="Enter time required"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Additional Information
-                    </label>
-                    <textarea
-                      required
-                      value={app.additionalInfo}
-                      onChange={(e) => setApp({ ...app, additionalInfo: e.target.value })}
-                      className="w-full border rounded-lg p-2 focus:ring focus:ring-blue-300 outline-none"
-                      rows="3"
-                      placeholder="Explain why you're a good fit..."
-                    ></textarea>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className={`bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-full text-lg mx-auto block ${
-                      submitting ? "opacity-50 cursor-not-allowed" : ""
-                    }`}
-                  >
-                    {submitting ? "Submitting..." : "Apply Now"}
-                  </button>
-
-                  {msg && <p className="text-sm text-gray-600 text-center">{msg}</p>}
-                </form>
-              </div>
-            )}
           </div>
         </div>
       </div>

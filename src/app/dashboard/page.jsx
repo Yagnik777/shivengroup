@@ -81,19 +81,19 @@ const HeroSection = () => {
   );
 };
 
-// 3️⃣ How It Works Section
-const HowItWorksSection = () => (
-  <div className="w-full py-10 bg-white border-t border-gray-100">
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-      <a
-        href="#"
-        className="text-base font-semibold text-blue-600 tracking-wider uppercase hover:text-blue-800 transition"
-      >
-        HOW IT WORKS
-      </a>
-    </div>
-  </div>
-);
+//// 3️⃣ How It Works Section
+//const HowItWorksSection = () => (
+//  <div className="w-full py-10 bg-white border-t border-gray-100">
+//    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+//      <a
+//        href="#"
+//        className="text-base font-semibold text-blue-600 tracking-wider uppercase hover:text-blue-800 transition"
+//      >
+//        HOW IT WORKS
+//      </a>
+//    </div>
+//  </div>
+//);
 
 // 4️⃣ Main Dashboard Page
 export default function DashboardPage() {
@@ -117,8 +117,8 @@ export default function DashboardPage() {
     <div className="min-h-screen bg-gray-50 font-sans">
       <main>
         <HeroSection />
-        <HowItWorksSection />
-
+        
+        
         {/* Additional Dashboard Content */}
         
       </main>

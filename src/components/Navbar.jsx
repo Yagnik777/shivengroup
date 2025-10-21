@@ -102,7 +102,7 @@ export default function NavBar({ links = [] }) {
               <>
                 <NavLink href="/profile">Profile</NavLink>
                 <button
-                  onClick={() => signOut({ redirect: true, callbackUrl: "/login" })}
+                  onClick={() => signOut({ redirect: true, callbackUrl: "/login",cookieName: "next-auth.user-token" })}
                   className="w-full text-left px-3 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md"
                 >
                   Log Out

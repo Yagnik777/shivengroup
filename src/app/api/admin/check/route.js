@@ -1,20 +1,24 @@
-import { NextResponse } from "next/server";
-import { verifyToken } from "@/lib/auth";
-import { cookies } from "next/headers";
+// src/app/api/admin/check/route.js
+import { getToken } from "next-auth/jwt";
 
-export async function GET() {
+const secret = process.env.NEXTAUTH_SECRET;
+
+export async function GET(req) {
   try {
-    const cookieStore = await cookies(); // ✅ FIX - async required
-    const token = cookieStore.get("token")?.value;
+    // get token from cookie
+    const token = await getToken({ req, secret });
+    if (!token) {
+      return new Response(JSON.stringify({ loggedIn: false }), { status: 200 });
+    }
 
-    if (!token) return NextResponse.json({ loggedIn: false });
-
-    const user = verifyToken(token);
-    if (!user) return NextResponse.json({ loggedIn: false });
-
-    return NextResponse.json({ loggedIn: true, user });
-  } catch (err) {
-    console.error("Check error:", err);
-    return NextResponse.json({ loggedIn: false });
+    // Check role
+    const isAdmin = token.role === "admin";
+    return new Response(JSON.stringify({ loggedIn: Boolean(isAdmin), role: token.role || null }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (error) {
+    console.error("admin/check error:", error);
+    return new Response(JSON.stringify({ loggedIn: false }), { status: 200, headers: { "Content-Type": "application/json" } });
   }
 }

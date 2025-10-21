@@ -1,107 +1,90 @@
+// src/app/login/page.jsx
 "use client";
+
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
     setLoading(true);
+    setError("");
 
-    if (!email || !password) {
-      setError("Email and password are required");
-      setLoading(false);
+    const res = await signIn("credentials", {
+      redirect: false,
+      email,
+      password,
+    });
+
+    setLoading(false);
+
+    if (!res) {
+      setError("Unknown error");
       return;
     }
 
-    const res = await signIn("user-credentials", {
-      redirect: false,
-      email: email.trim(),
-      password: password.trim(),
-      callbackUrl: "/",
-    });
+    if (res.error) {
+      setError(res.error || "Invalid credentials");
+      return;
+    }
 
-    if (res?.error) {
-      setError("Invalid email or password");
-      setLoading(false);
+    // successful -> get session to read role
+    // We can call /api/auth/session or rely on res.ok — better to fetch session
+    const sessionRes = await fetch("/api/auth/session");
+    const session = await sessionRes.json();
+
+    const role = session?.user?.role || (res?.user?.role || "user");
+
+    if (role === "admin") {
+      router.replace("/admin/dashboard");
     } else {
-      router.replace("/");
+      router.replace("/dashboard");
     }
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gray-100">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-md p-8 bg-white rounded-lg shadow-lg"
-      >
-        <h1 className="text-3xl font-bold text-center mb-6 text-gray-800">
-          User Login
-        </h1>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <form onSubmit={handleSubmit} className="w-full max-w-md bg-white p-8 rounded shadow">
+        <h1 className="text-2xl mb-6 font-semibold">Sign in</h1>
 
-        {error && (
-          <div className="bg-red-100 text-red-700 p-2 mb-4 rounded">
-            {error}
-          </div>
-        )}
-
-        <div className="mb-4">
-          <label className="block text-gray-700 mb-1" htmlFor="email">
-            Email
-          </label>
+        <label className="block mb-2">
+          <span className="text-sm">Email</span>
           <input
-            id="email"
-            name="email"
             type="email"
-            autoComplete="email"
+            required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="you@example.com"
+            className="mt-1 block w-full border px-3 py-2 rounded"
           />
-        </div>
+        </label>
 
-        <div className="mb-6">
-          <label className="block text-gray-700 mb-1" htmlFor="password">
-            Password
-          </label>
+        <label className="block mb-4">
+          <span className="text-sm">Password</span>
           <input
-            id="password"
-            name="password"
             type="password"
-            autoComplete="current-password"
+            required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Enter your password"
+            className="mt-1 block w-full border px-3 py-2 rounded"
           />
-        </div>
+        </label>
+
+        {error && <div className="mb-4 text-red-600">{error}</div>}
 
         <button
           type="submit"
           disabled={loading}
-          className={`w-full py-2 px-4 rounded-lg text-white font-semibold ${
-            loading
-              ? "bg-blue-400 cursor-not-allowed"
-              : "bg-blue-600 hover:bg-blue-700"
-          }`}
+          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
         >
-          {loading ? "Logging in..." : "Login"}
+          {loading ? "Signing in..." : "Sign in"}
         </button>
-
-        <p className="mt-4 text-center text-gray-600">
-          Don't have an account?{" "}
-          <a href="/register" className="text-blue-600 hover:underline">
-            Sign Up
-          </a>
-        </p>  
       </form>
     </div>
   );

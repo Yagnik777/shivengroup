@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 
-import SelectionSteps from "@/components/SelectionSteps";
+
 
 
 // 1️⃣ Utility Component: File Text Icon (Inline SVG)
@@ -79,7 +79,7 @@ export default function DashboardPage() {
       <main>
         <HeroSection />
         
-        <SelectionSteps />
+        
 
         {/* Additional content placeholder */}
         
