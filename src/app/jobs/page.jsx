@@ -20,7 +20,7 @@ export default function JobsPage() {
   const [jobTypeFilter, setJobTypeFilter] = useState("All");
   const [experienceLevels, setExperienceLevels] = useState([]);
   const [experienceFilter, setExperienceFilter] = useState("All");
-  const [showFilters, setShowFilters] = useState(false); // ✅ Mobile toggle
+  const [showFilters, setShowFilters] = useState(false);
 
   // Application
   const [showForm, setShowForm] = useState(false);
@@ -167,10 +167,10 @@ export default function JobsPage() {
       <div className="max-w-[1600px] mx-auto px-4 flex flex-col gap-6">
         <h1 className="text-3xl font-extrabold text-gray-800 text-center md:text-left">Job Board</h1>
 
-        <div className="flex flex-col md:flex-row gap-6 bg-white rounded-xl shadow overflow-hidden min-h-[80vh]">
+        <div className="flex flex-col md:flex-row gap-6 bg-white rounded-xl shadow overflow-visible">
 
           {/* Job List */}
-          <div className="md:w-1/3 w-full border-b md:border-b-0 md:border-r overflow-auto p-4 bg-gray-50">
+          <div className="md:w-1/3 w-full border-b md:border-b-0 md:border-r p-4 bg-gray-50 sticky top-0 h-fit">
             {loading ? <p>Loading jobs...</p> :
               jobs.length === 0 ? <p>No jobs available.</p> :
               jobs.map(job => (
@@ -211,7 +211,7 @@ export default function JobsPage() {
             </div>
 
             {/* Job Details */}
-            <div className="md:w-3/4 w-full p-6 overflow-auto">
+            <div className="md:w-3/4 w-full p-6">
               {!selectedJobData ? (
                 <p className="text-gray-500">Select a job to see details</p>
               ) : (

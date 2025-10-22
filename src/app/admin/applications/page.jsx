@@ -12,7 +12,7 @@ export default function AdminApplications() {
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [filteredApps, setFilteredApps] = useState([]);
 
-  // Fetch applications from backend
+  // Fetch applications
   const fetchApps = async () => {
     setLoading(true);
     try {
@@ -33,17 +33,27 @@ export default function AdminApplications() {
 
   useEffect(() => {
     let filtered = apps;
-    if (statusFilter !== "All") filtered = filtered.filter(a => a.status.toLowerCase() === statusFilter.toLowerCase());
-    if (jobFilter !== "All") filtered = filtered.filter(a => a.job?.title === jobFilter);
-    if (categoryFilter !== "All") filtered = filtered.filter(a => a.job?.jobCategory === categoryFilter);
+    if (statusFilter !== "All")
+      filtered = filtered.filter(
+        (a) => a.status.toLowerCase() === statusFilter.toLowerCase()
+      );
+    if (jobFilter !== "All")
+      filtered = filtered.filter((a) => a.job?.title === jobFilter);
+    if (categoryFilter !== "All")
+      filtered = filtered.filter((a) => a.job?.jobCategory === categoryFilter);
     setFilteredApps(filtered);
   }, [apps, statusFilter, jobFilter, categoryFilter]);
 
+  // DELETE application
   const deleteApplication = async (id) => {
     if (!confirm("Are you sure you want to delete this application?")) return;
     try {
       const res = await fetch(`/api/applications/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Failed to delete");
+      let data = {};
+      try {
+        data = await res.json();
+      } catch {}
+      if (!res.ok) throw new Error(data.error || data.message || "Failed to delete");
       setApps((prev) => prev.filter((a) => a._id !== id));
     } catch (err) {
       console.error(err);
@@ -51,6 +61,7 @@ export default function AdminApplications() {
     }
   };
 
+  // PATCH application status
   const updateApplication = async (id, status) => {
     try {
       const res = await fetch(`/api/applications/${id}`, {
@@ -58,7 +69,11 @@ export default function AdminApplications() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
       });
-      if (!res.ok) throw new Error("Failed to update status");
+      let data = {};
+      try {
+        data = await res.json();
+      } catch {}
+      if (!res.ok) throw new Error(data.error || data.message || "Failed to update status");
       setApps((prev) => prev.map((a) => (a._id === id ? { ...a, status } : a)));
     } catch (err) {
       console.error(err);
@@ -68,9 +83,8 @@ export default function AdminApplications() {
 
   if (loading) return <p className="p-6">Loading applications...</p>;
 
-  // Extract unique job titles and categories for filters
-  const jobTitles = [...new Set(apps.map(a => a.job?.title).filter(Boolean))];
-  const jobCategories = [...new Set(apps.map(a => a.job?.jobCategory).filter(Boolean))];
+  const jobTitles = [...new Set(apps.map((a) => a.job?.title).filter(Boolean))];
+  const jobCategories = [...new Set(apps.map((a) => a.job?.jobCategory).filter(Boolean))];
 
   return (
     <div className="p-6">
@@ -78,25 +92,25 @@ export default function AdminApplications() {
 
       {/* Filters */}
       <div className="flex flex-col md:flex-row gap-4 mb-4">
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="border p-2 rounded w-full md:w-48">
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="border p-2 rounded w-full md:w-48">
           <option value="All">All Statuses</option>
           <option value="pending">Pending</option>
           <option value="approved">Approved</option>
           <option value="rejected">Rejected</option>
         </select>
 
-        <select value={jobFilter} onChange={e => setJobFilter(e.target.value)} className="border p-2 rounded w-full md:w-48">
+        <select value={jobFilter} onChange={(e) => setJobFilter(e.target.value)} className="border p-2 rounded w-full md:w-48">
           <option value="All">All Jobs</option>
           {jobTitles.map((title, i) => <option key={i} value={title}>{title}</option>)}
         </select>
 
-        <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} className="border p-2 rounded w-full md:w-48">
+        <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="border p-2 rounded w-full md:w-48">
           <option value="All">All Categories</option>
           {jobCategories.map((cat, i) => <option key={i} value={cat}>{cat}</option>)}
         </select>
       </div>
 
-      {/* Scrollable Table */}
+      {/* Table */}
       <div className="overflow-x-auto border rounded">
         <table className="w-full table-auto border-collapse text-sm min-w-[1200px]">
           <thead>
@@ -105,12 +119,12 @@ export default function AdminApplications() {
               <th className="border p-2">Email</th>
               <th className="border p-2">Phone</th>
               <th className="border p-2">Job Title</th>
-              <th className="border p-2">Job Category</th>
-              <th className="border p-2">Job Type</th>
+              <th className="border p-2">Category</th>
+              <th className="border p-2">Type</th>
               <th className="border p-2">Experience</th>
-              <th className="border p-2">Pricing</th>
-              <th className="border p-2">Time Required</th>
-              <th className="border p-2">Additional Info</th>
+              <th className="border p-2">Price</th>
+              <th className="border p-2">Time</th>
+              <th className="border p-2">Info</th>
               <th className="border p-2">LinkedIn</th>
               <th className="border p-2">Portfolio</th>
               <th className="border p-2">Resume</th>
@@ -121,60 +135,37 @@ export default function AdminApplications() {
           <tbody>
             {filteredApps.length === 0 ? (
               <tr>
-                <td colSpan="15" className="text-center p-4 text-gray-500">
-                  No applications found.
+                <td colSpan="15" className="text-center p-4 text-gray-500">No applications found.</td>
+              </tr>
+            ) : filteredApps.map((a) => (
+              <tr key={a._id} className="hover:bg-gray-50">
+                <td className="border p-2">{a.name}</td>
+                <td className="border p-2">{a.email}</td>
+                <td className="border p-2">{a.phone}</td>
+                <td className="border p-2">{a.job?.title || "Unknown"}</td>
+                <td className="border p-2">{a.job?.jobCategory || "N/A"}</td>
+                <td className="border p-2">{a.job?.type || "N/A"}</td>
+                <td className="border p-2">{a.job?.experienceLevel || "N/A"}</td>
+                <td className="border p-2">{a.price}</td>
+                <td className="border p-2">{a.estimatedDays}</td>
+                <td className="border p-2">{a.coverLetter}</td>
+                <td className="border p-2"><a href={a.linkedIn || "#"} target="_blank" className="text-blue-600">View</a></td>
+                <td className="border p-2"><a href={a.portfolio || "#"} target="_blank" className="text-blue-600">View</a></td>
+                <td className="border p-2">
+                  {a.attachments?.length ? a.attachments.map(f => (
+                    f?.url ? (
+                      <a key={f.url} href={f.url} target="_blank" className="text-blue-600 underline mr-2">View</a>
+                    ) : null
+                  )) : "N/A"}
+                </td>
+                <td className="border p-2">{a.status}</td>
+                <td className="border p-2 flex flex-col gap-1">
+                  {a.status !== "approved" && <button className="text-green-600 hover:underline" onClick={() => updateApplication(a._id, "approved")}>Approve</button>}
+                  {a.status !== "rejected" && <button className="text-yellow-600 hover:underline" onClick={() => updateApplication(a._id, "rejected")}>Reject</button>}
+                  <button className="text-red-600 hover:underline" onClick={() => deleteApplication(a._id)}>Delete</button>
                 </td>
               </tr>
-            ) : (
-              filteredApps.map((a) => (
-                <tr key={a._id} className="hover:bg-gray-50">
-                  <td className="border p-2">{a.name}</td>
-                  <td className="border p-2">{a.email}</td>
-                  <td className="border p-2">{a.phone}</td>
-                  <td className="border p-2">{a.job?.title || "Unknown"}</td>
-                  <td className="border p-2">{a.job?.jobCategory || "N/A"}</td>
-                  <td className="border p-2">{a.job?.type || "N/A"}</td>
-                  <td className="border p-2">{a.job?.experienceLevel || "N/A"}</td>
-                  <td className="border p-2">{a.price}</td>
-                  <td className="border p-2">{a.estimatedDays}</td>
-                  <td className="border p-2">{a.coverLetter}</td>
-                  <td className="border p-2"><a href={a.linkedIn} target="_blank" className="text-blue-600">View</a></td>
-                  <td className="border p-2"><a href={a.portfolio} target="_blank" className="text-blue-600">View</a></td>
-                  <td className="border p-2">
-                    {a.attachments?.map((f) => (
-                      <a key={f} href={`/uploads/${f}`} target="_blank" className="text-blue-600 underline mr-2">
-                        View
-                      </a>
-                    ))}
-                  </td>
-                  <td className="border p-2">{a.status}</td>
-                  <td className="border p-2 flex flex-col gap-1">
-                    {a.status !== "approved" && (
-                      <button
-                        className="text-green-600 hover:underline"
-                        onClick={() => updateApplication(a._id, "approved")}
-                      >
-                        Approve
-                      </button>
-                    )}
-                    {a.status !== "rejected" && (
-                      <button
-                        className="text-yellow-600 hover:underline"
-                        onClick={() => updateApplication(a._id, "rejected")}
-                      >
-                        Reject
-                      </button>
-                    )}
-                    <button
-                      className="text-red-600 hover:underline"
-                      onClick={() => deleteApplication(a._id)}
-                    >
-                      Delete
-                    </button>
-                  </td>
-                </tr>
-              ))
-            )}
+            ))}
           </tbody>
         </table>
       </div>

@@ -42,7 +42,7 @@ export default function SidebarLayout({ children }) {
           ))}
         </nav>
         <button
-          onClick={() => signOut({ redirect: true, callbackUrl: "/admin/login", cookieName: "next-auth.admin-token" })}
+          onClick={() => signOut({ redirect: true, callbackUrl: "/login", cookieName: "next-auth.admin-token" })}
           className="mt-6 px-3 py-2 bg-red-600 rounded w-full"
         >
           Logout
@@ -50,7 +50,7 @@ export default function SidebarLayout({ children }) {
                 
       </aside>
 
-      <main className="flex-1 p-6 bg-gray-100">{children}</main>
+      <main className="flex-1 p-6 bg-gray-100 overflow-auto h-screen">{children}</main>
     </div>
   );
 }

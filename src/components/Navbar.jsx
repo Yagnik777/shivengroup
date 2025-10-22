@@ -1,14 +1,12 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
 
-// NavLink component
-const NavLink = ({ children, href = "#", isPrimary = false, ...props }) => (
+const NavLink = ({ children, href = "#", isPrimary = false }) => (
   <Link
     href={href}
-    {...props}
-    className={`px-3 py-2 text-sm font-medium transition duration-150 ease-in-out ${
+    className={`block px-3 py-2 text-sm font-medium transition duration-150 ease-in-out ${
       isPrimary
         ? "text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md"
         : "text-gray-600 hover:text-blue-600"
@@ -20,13 +18,31 @@ const NavLink = ({ children, href = "#", isPrimary = false, ...props }) => (
 
 export default function NavBar({ links = [] }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [menuHeight, setMenuHeight] = useState(0);
+  const menuRef = useRef(null);
   const { data: session } = useSession();
   const user = session?.user;
 
+  // Animate mobile menu height
+  useEffect(() => {
+    if (menuRef.current) {
+      setMenuHeight(isMenuOpen ? menuRef.current.scrollHeight : 0);
+    }
+  }, [isMenuOpen]);
+
+  // Optional: Shadow on scroll
+  const [isScrolled, setIsScrolled] = useState(false);
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 0);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
-    <nav className="bg-white shadow-sm sticky top-0 z-10">
+    <nav className={`sticky top-0 z-50 transition-shadow ${isScrolled ? "shadow-md" : "shadow-sm"} bg-white`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
+
           {/* Logo */}
           <div className="flex-shrink-0 text-3xl font-extrabold text-blue-700 tracking-tight">
             Resumind
@@ -35,14 +51,12 @@ export default function NavBar({ links = [] }) {
           {/* Desktop Links */}
           <div className="hidden md:flex flex-grow justify-start ml-10 space-x-8">
             {links.map((link, i) => (
-              <NavLink key={i} href={link.href}>
-                {link.label}
-              </NavLink>
+              <NavLink key={i} href={link.href}>{link.label}</NavLink>
             ))}
           </div>
 
-          {/* User Section */}
-          <div className="hidden md:flex items-center space-x-6">
+          {/* Desktop User Section */}
+          <div className="hidden md:flex items-center space-x-4">
             {user ? (
               <>
                 <span className="text-gray-700 font-medium">Hello, {user.name}</span>
@@ -57,8 +71,8 @@ export default function NavBar({ links = [] }) {
               </>
             ) : (
               <>
-                <NavLink isPrimary={true} href="/login">Login</NavLink>
-                <NavLink isPrimary={true} href="/register">Register</NavLink>
+                <NavLink isPrimary href="/login">Login</NavLink>
+                <NavLink isPrimary href="/register">Register</NavLink>
               </>
             )}
           </div>
@@ -89,34 +103,34 @@ export default function NavBar({ links = [] }) {
       </div>
 
       {/* Mobile Menu */}
-      {isMenuOpen && (
-        <div className="md:hidden pb-4 pt-2 space-y-1 sm:px-3 border-t">
+      <div
+        className="md:hidden overflow-hidden transition-all duration-300 ease-in-out border-t bg-white"
+        style={{ maxHeight: `${menuHeight}px` }}
+      >
+        <div ref={menuRef} className="px-2 pt-2 pb-4 space-y-1">
           {links.map((link, i) => (
-            <NavLink key={i} href={link.href}>
-              {link.label}
-            </NavLink>
+            <NavLink key={i} href={link.href}>{link.label}</NavLink>
           ))}
 
-          <div className="px-3 pt-4 border-t mt-4">
-            {user ? (
-              <>
-                <NavLink href="/profile">Profile</NavLink>
-                <button
-                  onClick={() => signOut({ redirect: true, callbackUrl: "/login",cookieName: "next-auth.user-token" })}
-                  className="w-full text-left px-3 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md"
-                >
-                  Log Out
-                </button>
-              </>
-            ) : (
-              <>
-                <NavLink isPrimary={true} href="/login">Login</NavLink>
-                <NavLink isPrimary={true} href="/register">Register</NavLink>
-              </>
-            )}
-          </div>
+          {user ? (
+            <>
+              <NavLink href="/profile">Profile</NavLink>
+              <NavLink href="/jobs">Jobs</NavLink>
+              <button
+                onClick={() => signOut({ redirect: true, callbackUrl: "/login" })}
+                className="w-full text-left px-3 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md"
+              >
+                Log Out
+              </button>
+            </>
+          ) : (
+            <>
+              <NavLink isPrimary href="/login">Login</NavLink>
+              <NavLink isPrimary href="/register">Register</NavLink>
+            </>
+          )}
         </div>
-      )}
+      </div>
     </nav>
   );
 }
