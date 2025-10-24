@@ -165,12 +165,13 @@ export default function JobsPage() {
   return (
     <div className="min-h-screen bg-gray-100 py-8">
       <div className="max-w-[1600px] mx-auto px-4 flex flex-col gap-6">
+
         <h1 className="text-3xl font-extrabold text-gray-800 text-center md:text-left">Job Board</h1>
 
         <div className="flex flex-col md:flex-row gap-6 bg-white rounded-xl shadow overflow-visible">
 
           {/* Job List */}
-          <div className="md:w-1/3 w-full border-b md:border-b-0 md:border-r p-4 bg-gray-50 sticky top-0 h-fit">
+          <div className="w-full md:w-1/3 border-b md:border-b-0 md:border-r p-4 bg-gray-50 md:sticky md:top-0">
             {loading ? <p>Loading jobs...</p> :
               jobs.length === 0 ? <p>No jobs available.</p> :
               jobs.map(job => (
@@ -184,9 +185,9 @@ export default function JobsPage() {
           </div>
 
           {/* Right Section */}
-          <div className="md:w-2/3 w-full flex flex-col md:flex-row">
+          <div className="flex flex-col w-full md:w-2/3">
 
-            {/* Mobile Filter Toggle Button */}
+            {/* Mobile Filter Toggle */}
             <div className="flex md:hidden justify-end p-2">
               <button onClick={() => setShowFilters(!showFilters)} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">
                 {showFilters ? "Hide Filters" : "Show Filters"}
@@ -194,13 +195,13 @@ export default function JobsPage() {
             </div>
 
             {/* Filters */}
-            <div className={`md:w-1/4 w-full p-4 border-t md:border-t-0 md:border-l flex flex-col gap-3 bg-gray-50 transition-all duration-300 ${showFilters ? "block" : "hidden md:block"}`}>
+            <div className={`${showFilters ? "block" : "hidden"} md:block md:w-1/4 w-full p-4 border-t md:border-t-0 md:border-l bg-gray-50`}>
               <h3 className="font-semibold mb-2">Filters</h3>
-              <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="border p-2 rounded w-full">
+              <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="border p-2 rounded w-full mb-2">
                 <option value="All">All Categories</option>
                 {categories.map((c, i) => <option key={i}>{c}</option>)}
               </select>
-              <select value={jobTypeFilter} onChange={(e) => setJobTypeFilter(e.target.value)} className="border p-2 rounded w-full">
+              <select value={jobTypeFilter} onChange={(e) => setJobTypeFilter(e.target.value)} className="border p-2 rounded w-full mb-2">
                 <option value="All">All Job Types</option>
                 {jobTypes.map((t, i) => <option key={i}>{t}</option>)}
               </select>
@@ -211,7 +212,7 @@ export default function JobsPage() {
             </div>
 
             {/* Job Details */}
-            <div className="md:w-3/4 w-full p-6">
+            <div className="w-full md:w-3/4 p-6">
               {!selectedJobData ? (
                 <p className="text-gray-500">Select a job to see details</p>
               ) : (
@@ -231,6 +232,7 @@ export default function JobsPage() {
                     </div>
                   )}
 
+                  {/* Apply Section */}
                   {appliedJobs.includes(selectedJob) ? (
                     <p className="mt-6 text-green-600 font-semibold">✅ You have already applied for this job</p>
                   ) : !showForm ? (
@@ -239,21 +241,21 @@ export default function JobsPage() {
                     </button>
                   ) : (
                     <form onSubmit={handleSubmit} className="space-y-3 mt-4">
-                      <input type="text" required value={app.name} disabled className="border p-2 rounded w-full bg-gray-100" />
-                      <input type="email" required value={app.email} disabled className="border p-2 rounded w-full bg-gray-100" />
-                      <input type="text" required value={app.phone} placeholder="Mobile / Phone" onChange={(e) => setApp({...app, phone: e.target.value})} className="border p-2 rounded w-full" />
-                      <input type="text" required value={app.pricing} placeholder="Pricing" onChange={(e) => setApp({...app, pricing: e.target.value})} className="border p-2 rounded w-full" />
-                      <input type="text" required value={app.timeRequired} placeholder="Time Required" onChange={(e) => setApp({...app, timeRequired: e.target.value})} className="border p-2 rounded w-full" />
-                      <textarea required value={app.additionalInfo} placeholder="Why Should We Hire You/Additional Info" onChange={(e) => setApp({...app, additionalInfo: e.target.value})} className="border p-2 rounded w-full" />
+                      <input type="text" value={app.name} disabled className="border p-2 rounded w-full bg-gray-100" />
+                      <input type="email" value={app.email} disabled className="border p-2 rounded w-full bg-gray-100" />
+                      <input type="text" value={app.phone} placeholder="Mobile / Phone" onChange={(e) => setApp({...app, phone: e.target.value})} className="border p-2 rounded w-full" />
+                      <input type="text" value={app.pricing} placeholder="Pricing" onChange={(e) => setApp({...app, pricing: e.target.value})} className="border p-2 rounded w-full" />
+                      <input type="text" value={app.timeRequired} placeholder="Time Required" onChange={(e) => setApp({...app, timeRequired: e.target.value})} className="border p-2 rounded w-full" />
+                      <textarea value={app.additionalInfo} placeholder="Why Should We Hire You/Additional Info" onChange={(e) => setApp({...app, additionalInfo: e.target.value})} className="border p-2 rounded w-full" />
 
-                      <input type="text" required value={selectedJobData.jobCategory} disabled className="border p-2 rounded w-full bg-gray-100" />
-                      <input type="text" required value={selectedJobData.type} disabled className="border p-2 rounded w-full bg-gray-100" />
-                      <input type="text" required value={selectedJobData.experienceLevel} disabled className="border p-2 rounded w-full bg-gray-100" />
+                      <input type="text" value={selectedJobData.jobCategory} disabled className="border p-2 rounded w-full bg-gray-100" />
+                      <input type="text" value={selectedJobData.type} disabled className="border p-2 rounded w-full bg-gray-100" />
+                      <input type="text" value={selectedJobData.experienceLevel} disabled className="border p-2 rounded w-full bg-gray-100" />
                       <input type="url" placeholder="LinkedIn Profile URL" value={app.linkedIn} onChange={(e) => setApp({...app, linkedIn: e.target.value})} className="border p-2 rounded w-full" />
                       <input type="url" placeholder="Portfolio URL" value={app.portfolio} onChange={(e) => setApp({...app, portfolio: e.target.value})} className="border p-2 rounded w-full" />
 
                       <label className="block text-sm font-medium">Upload Resume (PDF/DOC)</label>
-                      <input type="file" accept=".pdf,.doc,.docx" required onChange={handleResumeUpload} className="border p-2 rounded w-full" />
+                      <input type="file" accept=".pdf,.doc,.docx" onChange={handleResumeUpload} className="border p-2 rounded w-full" />
                       {app.resume && <p className="text-sm text-gray-600 mt-1">Selected File: {app.resume.name}</p>}
 
                       <button disabled={submitting} className="bg-blue-600 text-white px-6 py-2 rounded mt-2 hover:bg-blue-700 transition w-full md:w-auto">
