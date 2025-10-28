@@ -1,15 +1,17 @@
 "use client";
+
 import { useState, useRef, useEffect } from "react";
 import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
 
-const NavLink = ({ children, href = "#", isPrimary = false }) => (
+const NavLink = ({ children, href = "#", isPrimary = false, onClick }) => (
   <Link
     href={href}
+    onClick={onClick}
     className={`block px-3 py-2 text-sm font-medium transition duration-150 ease-in-out ${
       isPrimary
         ? "text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md"
-        : "text-gray-600 hover:text-blue-600"
+        : "text-gray-700 hover:text-blue-600"
     }`}
   >
     {children}
@@ -39,19 +41,29 @@ export default function NavBar({ links = [] }) {
   }, []);
 
   return (
-    <nav className={`sticky top-0 z-50 transition-shadow ${isScrolled ? "shadow-md" : "shadow-sm"} bg-white`}>
+    <nav
+      className={`sticky top-0 z-50 transition-shadow ${
+        isScrolled ? "shadow-md" : "shadow-sm"
+      } bg-white`}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Main Navbar Row */}
         <div className="flex justify-between items-center h-20">
-
-          {/* Logo */}
-          <div className="flex-shrink-0 text-3xl font-extrabold text-blue-700 tracking-tight">
+          
+          {/* ✅ Logo linked to Home */}
+          <Link
+            href="/"
+            className="flex-shrink-0 text-3xl font-extrabold text-blue-700 tracking-tight hover:text-blue-800 transition"
+          >
             Resumind
-          </div>
+          </Link>
 
           {/* Desktop Links */}
           <div className="hidden md:flex flex-grow justify-start ml-10 space-x-8">
             {links.map((link, i) => (
-              <NavLink key={i} href={link.href}>{link.label}</NavLink>
+              <NavLink key={i} href={link.href}>
+                {link.label}
+              </NavLink>
             ))}
           </div>
 
@@ -60,10 +72,12 @@ export default function NavBar({ links = [] }) {
             {user ? (
               <>
                 <span className="text-gray-700 font-medium">Hello, {user.name}</span>
-                <NavLink href="/profile">Profile</NavLink>
+                
                 <NavLink href="/jobs">Jobs</NavLink>
                 <button
-                  onClick={() => signOut({ redirect: true, callbackUrl: "/login" })}
+                  onClick={() =>
+                    signOut({ redirect: true, callbackUrl: "/login" })
+                  }
                   className="px-3 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md"
                 >
                   Log Out
@@ -81,9 +95,8 @@ export default function NavBar({ links = [] }) {
           <div className="md:hidden">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 focus:outline-none"
             >
-              <span className="sr-only">Open main menu</span>
               <svg
                 className="h-6 w-6"
                 fill="none"
@@ -94,7 +107,11 @@ export default function NavBar({ links = [] }) {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth="2"
-                  d={isMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"}
+                  d={
+                    isMenuOpen
+                      ? "M6 18L18 6M6 6l12 12"
+                      : "M4 6h16M4 12h16M4 18h16"
+                  }
                 />
               </svg>
             </button>
@@ -102,22 +119,32 @@ export default function NavBar({ links = [] }) {
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* ✅ Mobile Menu */}
       <div
         className="md:hidden overflow-hidden transition-all duration-300 ease-in-out border-t bg-white"
         style={{ maxHeight: `${menuHeight}px` }}
       >
         <div ref={menuRef} className="px-2 pt-2 pb-4 space-y-1">
           {links.map((link, i) => (
-            <NavLink key={i} href={link.href}>{link.label}</NavLink>
+            <NavLink
+              key={i}
+              href={link.href}
+              onClick={() => setIsMenuOpen(false)} // close on click
+            >
+              {link.label}
+            </NavLink>
           ))}
 
           {user ? (
             <>
-              <NavLink href="/profile">Profile</NavLink>
-              <NavLink href="/jobs">Jobs</NavLink>
+              
+              <NavLink href="/jobs" onClick={() => setIsMenuOpen(false)}>
+                Jobs
+              </NavLink>
               <button
-                onClick={() => signOut({ redirect: true, callbackUrl: "/login" })}
+                onClick={() =>
+                  signOut({ redirect: true, callbackUrl: "/login" })
+                }
                 className="w-full text-left px-3 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md"
               >
                 Log Out
@@ -125,8 +152,20 @@ export default function NavBar({ links = [] }) {
             </>
           ) : (
             <>
-              <NavLink isPrimary href="/login">Login</NavLink>
-              <NavLink isPrimary href="/register">Register</NavLink>
+              <NavLink
+                isPrimary
+                href="/login"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Login
+              </NavLink>
+              <NavLink
+                isPrimary
+                href="/register"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Register
+              </NavLink>
             </>
           )}
         </div>

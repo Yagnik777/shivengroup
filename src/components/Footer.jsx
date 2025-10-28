@@ -11,12 +11,7 @@ export default function Footer() {
           <div className="mt-6 md:mt-0 text-sm flex flex-col md:flex-row md:gap-6">
             <p>Phone: +91-XXXXXXXXXX</p>
             <p>Email: info@shivengroup.com</p>
-            <a
-              href="/admin/login"
-              className="mt-2 md:mt-0 text-blue-400 hover:text-blue-500"
-            >
-              Admin Login
-            </a>
+            
           </div>
         </div>
 

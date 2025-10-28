@@ -1,4 +1,3 @@
-// src/app/login/page.jsx
 "use client";
 
 import { useState } from "react";
@@ -35,17 +34,17 @@ export default function LoginPage() {
       return;
     }
 
-    // successful -> get session to read role
-    // We can call /api/auth/session or rely on res.ok — better to fetch session
+    // ✅ fetch user session to determine role
     const sessionRes = await fetch("/api/auth/session");
     const session = await sessionRes.json();
+    const role = session?.user?.role || "user";
 
-    const role = session?.user?.role || (res?.user?.role || "user");
-
+    // ✅ redirect based on role
     if (role === "admin") {
       router.replace("/admin/dashboard");
     } else {
-      router.replace("/dashboard");
+      // 👇 redirect user to Job page after login
+      router.replace("/jobs"); // or "/user/jobs" depending on your folder
     }
   };
 
