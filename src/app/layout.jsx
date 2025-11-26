@@ -7,6 +7,12 @@ import SessionProviderWrapper from "../components/SessionProviderWrapper";
 import Footer from "../components/Footer";
 import { usePathname } from "next/navigation";
 
+
+export const metadata = {
+  title: "Shivengroup",
+  description: "Jobs | Engineering | Infrastructure",
+};
+
 export default function RootLayout({ children }) {
   const pathname = usePathname();
   const isAdmin = pathname.startsWith("/admin"); // detect admin routes
