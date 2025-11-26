@@ -1,8 +1,6 @@
 "use client";
-import React from "react";
-
-import SelectionSteps from "@/components/SelectionSteps";
-
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 // 1️⃣ Utility Component: File Text Icon (Inline SVG)
 const FileTextIcon = (props) => (
@@ -29,6 +27,24 @@ const FileTextIcon = (props) => (
 
 // 2️⃣ Hero Section Component
 const HeroSection = () => {
+  const router = useRouter();
+  const [user, setUser] = useState(null);
+
+  // ✔️ Check login status from localStorage
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) setUser(JSON.parse(storedUser));
+  }, []);
+
+  // ✔️ Button click handler
+  const handleStart = () => {
+    if (user) {
+      router.push("/jobs"); // Logged in → Jobs page
+    } else {
+      router.push("/login"); // Not logged in → Login page
+    }
+  };
+
   return (
     <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:py-24 lg:px-8">
       <div className="lg:grid lg:grid-cols-2 lg:gap-12 items-center">
@@ -39,17 +55,17 @@ const HeroSection = () => {
             <span className="text-blue-600">Job Application Process</span>
           </h1>
           <p className="mt-6 text-lg text-gray-600 max-w-lg">
-            Resumind helps you prepare and submit your application materials
-            quickly and effectively. Get job-ready with our streamlined
-            process.
+            Vaccancies helps you prepare and submit your application materials
+            quickly and effectively. Get job-ready with our streamlined process.
           </p>
+
           <div className="mt-10">
-            <a
-              href="/dashboard"
+            <button
+              onClick={handleStart}
               className="inline-flex items-center px-8 py-3 border border-transparent text-lg font-medium rounded-xl shadow-xl text-white bg-blue-600 hover:bg-blue-700 transition duration-150 ease-in-out transform hover:scale-[1.02]"
             >
               Get Started - It's Free
-            </a>
+            </button>
           </div>
         </div>
 
@@ -69,20 +85,14 @@ const HeroSection = () => {
   );
 };
 
-
-
 // 4️⃣ Main Dashboard Page (Default Export)
 export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
-      {/* Replace NavBarPlaceholder with actual NavBar component if needed */}
       <main>
         <HeroSection />
-        
-        <SelectionSteps />
 
         {/* Additional content placeholder */}
-        
       </main>
     </div>
   );
