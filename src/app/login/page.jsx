@@ -10,6 +10,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false); // 👁️ added
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -75,14 +76,25 @@ export default function LoginPage() {
 
           <label className="block mb-4">
             <span className="text-sm font-medium text-gray-700">Password</span>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 w-full border border-gray-300 px-3 py-2 rounded-lg 
-              focus:ring-2 focus:ring-blue-500 focus:outline-none"
-            />
+
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"} // 👁️
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="mt-1 w-full border border-gray-300 px-3 py-2 rounded-lg pr-10
+                focus:ring-2 focus:ring-blue-500 focus:outline-none"
+              />
+
+              {/* Eye Icon */}
+              <span
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-3 cursor-pointer text-gray-600 text-lg"
+              >
+                {showPassword ? "🙈" : "👁️"}
+              </span>
+            </div>
           </label>
 
           {error && (

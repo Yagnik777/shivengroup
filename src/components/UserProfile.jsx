@@ -147,6 +147,21 @@ export default function UserProfile() {
     setSaving(true);
     setMessage("");
 
+    // ✅ Validate mandatory fields
+    const mandatoryFields = [
+      "fullName","email","mobile","dob","pincode","state","education",
+      "profession","position","role","experience","city","reference",
+      "linkedin","portfolio","skills","resume"
+    ];
+
+    for (let field of mandatoryFields) {
+      if (!profile[field] || (Array.isArray(profile[field]) && profile[field].length === 0)) {
+        setMessage(`❌ Please fill all mandatory fields: ${field}`);
+        setSaving(false);
+        return;
+      }
+    }
+
     try {
       const formData = new FormData();
 
@@ -208,9 +223,11 @@ export default function UserProfile() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {["fullName", "email", "mobile", "dob"].map((f) => (
+          {["fullName","email","mobile","dob"].map((f) => (
             <div key={f}>
-              <label className="text-xs font-semibold text-gray-600 capitalize">{f}</label>
+              <label className="text-xs font-semibold text-gray-600 capitalize">
+                {f} <span className="text-red-600">*</span>
+              </label>
               <input
                 type={f === "dob" ? "date" : f === "email" ? "email" : "text"}
                 name={f}
@@ -222,28 +239,30 @@ export default function UserProfile() {
             </div>
           ))}
 
-          <SelectInput label="Profession" name="profession" options={professions} value={profile.profession} onChange={handleChange} disabled={readOnly} />
-          <SelectInput label="Position" name="position" options={positions} value={profile.position} onChange={handleChange} disabled={readOnly} />
-          <SelectInput label="Role" name="role" options={roles} value={profile.role} onChange={handleChange} disabled={readOnly} />
-          <SelectInput label="Experience" name="experience" options={experiences} value={profile.experience} onChange={handleChange} disabled={readOnly} />
-          <SelectInput label="City" name="city" options={cities} value={profile.city} onChange={handleChange} disabled={readOnly} />
+          <SelectInput label="Profession" name="profession" options={professions} value={profile.profession} onChange={handleChange} disabled={readOnly} mandatory />
+          <SelectInput label="Position" name="position" options={positions} value={profile.position} onChange={handleChange} disabled={readOnly} mandatory />
+          <SelectInput label="Role" name="role" options={roles} value={profile.role} onChange={handleChange} disabled={readOnly} mandatory />
+          <SelectInput label="Experience" name="experience" options={experiences} value={profile.experience} onChange={handleChange} disabled={readOnly} mandatory />
+          <SelectInput label="City" name="city" options={cities} value={profile.city} onChange={handleChange} disabled={readOnly} mandatory />
 
           <InputField label="Pin Code" name="pincode" value={profile.pincode} onChange={(e) => {
             if (readOnly) return;
             const value = e.target.value.replace(/\D/g, "");
             if (value.length <= 6) handleChange({ target: { name: "pincode", value } });
-          }} readOnly={readOnly} />
+          }} readOnly={readOnly} mandatory />
 
-          <SelectInput label="State" name="state" options={indianStates} value={profile.state} onChange={handleChange} disabled={readOnly} />
-          <InputField label="Minimum Basic Education" name="education" value={profile.education} onChange={handleChange} readOnly={readOnly} />
-          <SelectInput label="Reference" name="reference" options={references} value={profile.reference} onChange={handleChange} disabled={readOnly} />
-          <InputField label="LinkedIn" name="linkedin" value={profile.linkedin} onChange={handleChange} readOnly={readOnly} />
-          <InputField label="Portfolio" name="portfolio" value={profile.portfolio} onChange={handleChange} readOnly={readOnly} />
+          <SelectInput label="State" name="state" options={indianStates} value={profile.state} onChange={handleChange} disabled={readOnly} mandatory />
+          <InputField label="Minimum Basic Education" name="education" value={profile.education} onChange={handleChange} readOnly={readOnly} mandatory />
+          <SelectInput label="Reference" name="reference" options={references} value={profile.reference} onChange={handleChange} disabled={readOnly} mandatory />
+          <InputField label="LinkedIn" name="linkedin" value={profile.linkedin} onChange={handleChange} readOnly={readOnly} mandatory />
+          <InputField label="Portfolio" name="portfolio" value={profile.portfolio} onChange={handleChange} readOnly={readOnly} mandatory />
         </div>
 
         {/* SKILLS */}
         <div className="mt-8">
-          <h3 className="text-sm font-semibold text-gray-600 mb-2">Skills</h3>
+          <h3 className="text-sm font-semibold text-gray-600 mb-2">
+            Skills <span className="text-red-600">*</span>
+          </h3>
           <div className="flex flex-wrap gap-2 mb-2">
             {predefinedSkills.map(skill => (
               <button key={skill} type="button" onClick={()=>handleSkillToggle(skill)}
@@ -270,7 +289,7 @@ export default function UserProfile() {
         </div>
 
         {/* FILE INPUTS */}
-        <FileInput label="Resume" name="resume" file={profile.resume} onChange={handleFileChange} onRemove={handleRemoveFile} readOnly={readOnly} />
+        <FileInput label="Resume" name="resume" file={profile.resume} onChange={handleFileChange} onRemove={handleRemoveFile} readOnly={readOnly} mandatory />
         <FileInput label="Cover Letter" name="coverLetter" file={profile.coverLetter} onChange={handleFileChange} onRemove={handleRemoveFile} readOnly={readOnly} />
         <FileInput label="Experience Letter" name="experienceLetter" file={profile.experienceLetter} onChange={handleFileChange} onRemove={handleRemoveFile} readOnly={readOnly} />
 
@@ -293,10 +312,10 @@ export default function UserProfile() {
 }
 
 /* COMPONENTS */
-function SelectInput({ label, name, options, value, onChange, disabled }) {
+function SelectInput({ label, name, options, value, onChange, disabled, mandatory }) {
   return (
     <div>
-      <label className="text-xs font-semibold text-gray-600">{label}</label>
+      <label className="text-xs font-semibold text-gray-600">{label} {mandatory && <span className="text-red-600">*</span>}</label>
       <select name={name} value={value} onChange={onChange} disabled={disabled} className="mt-1 p-2 w-full border rounded-lg">
         <option value="">Select {label}</option>
         {options.map(opt => <option key={opt} value={opt}>{opt}</option>)}
@@ -305,19 +324,19 @@ function SelectInput({ label, name, options, value, onChange, disabled }) {
   );
 }
 
-function InputField({ label, name, value, onChange, readOnly }) {
+function InputField({ label, name, value, onChange, readOnly, mandatory }) {
   return (
     <div>
-      <label className="text-xs font-semibold text-gray-600">{label}</label>
+      <label className="text-xs font-semibold text-gray-600">{label} {mandatory && <span className="text-red-600">*</span>}</label>
       <input type="text" name={name} value={value||""} onChange={onChange} readOnly={readOnly} className="mt-1 p-2 w-full border rounded-lg" />
     </div>
   );
 }
 
-function FileInput({ label, name, file, onChange, onRemove, readOnly }) {
+function FileInput({ label, name, file, onChange, onRemove, readOnly, mandatory }) {
   return (
     <div className="mt-4">
-      <label className="text-sm font-semibold text-gray-600 mb-1 block">{label}</label>
+      <label className="text-sm font-semibold text-gray-600 mb-1 block">{label} {mandatory && <span className="text-red-600">*</span>}</label>
       {file && (
         <div className="flex items-center gap-3 mb-2">
           <p className="text-sm text-gray-700">{typeof file==="string"?file.split("/").pop():file.name}</p>
@@ -329,5 +348,3 @@ function FileInput({ label, name, file, onChange, onRemove, readOnly }) {
     </div>
   );
 }
-
- 

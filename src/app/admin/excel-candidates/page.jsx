@@ -340,13 +340,15 @@ export default function ExcelCandidatesUpload() {
               <th className="border px-2 py-1">Mail Sent</th>
               <th className="border px-2 py-1">Actions</th>
                 
-              {Object.keys(dbCandidates[0])
+              {dbCandidates.length > 0 &&
+              Object.keys(dbCandidates[0] || {})
                 .filter((k) => k !== "__v" && k !== "_id")
                 .map((key) => (
                   <th key={key} className="border px-2 py-1">
                     {key}
                   </th>
                 ))}
+
             </tr>
           </thead>
 

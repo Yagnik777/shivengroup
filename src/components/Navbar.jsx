@@ -156,6 +156,7 @@ export default function NavBar({ links = [] }) {
       </div>
 
       {/* Mobile Menu */}
+      {/* Mobile Menu */}
       <div
         className="md:hidden overflow-hidden transition-all duration-300 ease-in-out border-t bg-white"
         style={{ maxHeight: `${menuHeight}px` }}
@@ -166,18 +167,28 @@ export default function NavBar({ links = [] }) {
               {link.label}
             </NavLink>
           ))}
-
+      
           {user ? (
             <>
+              {/* Greeting */}
+              <span className="block px-3 py-2 text-sm font-medium text-gray-700">
+                Hello, {user.name?.split(" ")[0] || "User"}
+              </span>
+          
+              {/* Jobs & Profile */}
               <NavLink href="/jobs" onClick={() => setIsMenuOpen(false)}>
                 Jobs
               </NavLink>
-
               <NavLink href="/profile" onClick={() => setIsMenuOpen(false)}>
                 My Profile
               </NavLink>
-
-              {/* Mobile Notification */}
+          
+              {/* Status */}
+              <NavLink href="/status" onClick={() => setIsMenuOpen(false)}>
+                📋 My Status
+              </NavLink>
+          
+              {/* Notifications */}
               <Link
                 href="/notifications"
                 onClick={() => setIsMenuOpen(false)}
@@ -190,11 +201,10 @@ export default function NavBar({ links = [] }) {
                   </span>
                 )}
               </Link>
-
+              
+              {/* Logout */}
               <button
-                onClick={() =>
-                  signOut({ redirect: true, callbackUrl: "/login" })
-                }
+                onClick={() => signOut({ redirect: true, callbackUrl: "/login" })}
                 className="w-full text-left px-3 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md"
               >
                 Log Out
@@ -202,24 +212,17 @@ export default function NavBar({ links = [] }) {
             </>
           ) : (
             <>
-              <NavLink
-                isPrimary
-                href="/login"
-                onClick={() => setIsMenuOpen(false)}
-              >
+              <NavLink isPrimary href="/login" onClick={() => setIsMenuOpen(false)}>
                 Login
               </NavLink>
-              <NavLink
-                isPrimary
-                href="/register"
-                onClick={() => setIsMenuOpen(false)}
-              >
+              <NavLink isPrimary href="/register" onClick={() => setIsMenuOpen(false)}>
                 Register
               </NavLink>
             </>
           )}
         </div>
       </div>
+
     </nav>
   );
 }

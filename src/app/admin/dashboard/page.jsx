@@ -1,17 +1,31 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Users, Briefcase, FileText, ClipboardList } from "lucide-react";
+import { Users, Briefcase, FileText } from "lucide-react";
+
+// Recharts
+import {
+  BarChart,
+  Bar,
+  CartesianGrid,
+  Tooltip,
+  XAxis,
+  YAxis,
+  ResponsiveContainer,
+} from "recharts";
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({
     users: 0,
     jobs: 0,
     applications: 0,
-    positions: 0,
   });
+
   const [activities, setActivities] = useState([]);
+  const [professions, setProfessions] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [loadingActivities, setLoadingActivities] = useState(true);
+  const [loadingProfessions, setLoadingProfessions] = useState(true);
 
   // Fetch Stats
   useEffect(() => {
@@ -31,7 +45,7 @@ export default function AdminDashboard() {
     fetchStats();
   }, []);
 
-  // Fetch Recent Activities
+  // Fetch Activities
   useEffect(() => {
     const fetchActivities = async () => {
       try {
@@ -49,11 +63,40 @@ export default function AdminDashboard() {
     fetchActivities();
   }, []);
 
+  // Fetch Profession Wise Users
+  useEffect(() => {
+    const fetchProfessions = async () => {
+      try {
+        const res = await fetch("/api/admin/professions");
+        if (res.ok) {
+          const data = await res.json();
+          setProfessions(data.professions);
+        }
+      } catch (err) {
+        console.error("Error fetching professions:", err);
+      } finally {
+        setLoadingProfessions(false);
+      }
+    };
+    fetchProfessions();
+  }, []);
+
   const cards = [
-    { title: "Total Users", value: stats.users, icon: <Users className="w-6 h-6 text-blue-600" /> },
-    { title: "Total Jobs", value: stats.jobs, icon: <Briefcase className="w-6 h-6 text-green-600" /> },
-    { title: "Applications", value: stats.applications, icon: <FileText className="w-6 h-6 text-purple-600" /> },
-    
+    {
+      title: "Total Users",
+      value: stats.users,
+      icon: <Users className="w-6 h-6 text-blue-600" />,
+    },
+    {
+      title: "Total Jobs",
+      value: stats.jobs,
+      icon: <Briefcase className="w-6 h-6 text-green-600" />,
+    },
+    {
+      title: "Applications",
+      value: stats.applications,
+      icon: <FileText className="w-6 h-6 text-purple-600" />,
+    },
   ];
 
   return (
@@ -76,7 +119,9 @@ export default function AdminDashboard() {
             >
               <div>
                 <p className="text-gray-500 text-sm">{card.title}</p>
-                <h3 className="text-2xl font-semibold text-gray-800">{card.value}</h3>
+                <h3 className="text-2xl font-semibold text-gray-800">
+                  {card.value}
+                </h3>
               </div>
               <div className="bg-gray-100 p-3 rounded-full">{card.icon}</div>
             </div>
@@ -84,9 +129,46 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* Recent Activity Section */}
+      {/* Profession Summary Cards */}
       <div className="bg-white p-6 rounded-2xl shadow">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">Recent Activities</h2>
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">
+          Profession Summary
+        </h2>
+
+        {loadingProfessions ? (
+          <p className="text-gray-500">Loading profession summary...</p>
+        ) : professions.length > 0 ? (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {professions.map((p, i) => (
+              <div
+                key={i}
+                className="flex items-center justify-between bg-white p-5 rounded-2xl shadow hover:shadow-lg transition-shadow duration-300"
+              >
+                <div>
+                  <p className="text-gray-500 text-sm">{p.profession}</p>
+                  <h3 className="text-2xl font-semibold text-gray-800">
+                    {p.count}
+                  </h3>
+                </div>
+                <div className="bg-gray-100 p-3 rounded-full">
+                  <Users className="w-6 h-6 text-blue-600" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-gray-500">No profession data found.</p>
+        )}
+      </div>
+
+      {/* Profession Chart */}
+      
+
+      {/* Recent Activities */}
+      <div className="bg-white p-6 rounded-2xl shadow">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">
+          Recent Activities
+        </h2>
         {loadingActivities ? (
           <p className="text-gray-500">Loading recent activities...</p>
         ) : activities.length > 0 ? (

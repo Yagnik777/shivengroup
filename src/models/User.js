@@ -11,7 +11,25 @@ const UserSchema = new mongoose.Schema(
 
     resetPasswordToken: { type: String },
     resetPasswordExpire: { type: Date },
+     // 🔥 Email verification (OTP)
+     isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    verificationOTP: {
+      type: String,
+    },
+    verificationOTPExpire: {
+      type: Date,
+    },
 
+    // 🔥 Email verification (Magic Link Token - optional)
+    verificationToken: {
+      type: String,
+    },
+    verificationTokenExpire: {
+      type: Date,
+    },
     date: { 
       type: Date, 
       default: Date.now 

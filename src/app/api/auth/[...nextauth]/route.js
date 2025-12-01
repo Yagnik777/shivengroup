@@ -57,6 +57,8 @@ export const authOptions = {
 
   session: {
     strategy: "jwt",
+    maxAge: 12 * 60 * 60,   // 12 hours in seconds
+    updateAge: 60 * 60,     // refresh JWT if older than 1 hour (optional)
   },
 
   pages: {
