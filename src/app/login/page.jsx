@@ -44,7 +44,7 @@ export default function LoginPage() {
       if (role === "admin") {
         router.replace("/admin/dashboard");
       } else {
-        router.replace("/jobs");
+        router.replace("/dashboard");
       }
     } catch (err) {
       console.error(err);
