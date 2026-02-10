@@ -64,17 +64,17 @@ export default function RootLayout({ children }) {
   }
 
   // ✅ 2. Recruiter Pages: No Global Navbar/Footer (કારણ કે રિક્રૂટરનું પોતાનું સાઇડબાર છે)
-  if (isRecruiter) {
-    return (
-      <html lang="en">
-        <body className="bg-slate-50">
-          <SessionProviderWrapper>
-            <main>{children}</main>
-          </SessionProviderWrapper>
-        </body>
-      </html>
-    );
-  }
+  // if (isRecruiter) {
+  //   return (
+  //     <html lang="en">
+  //       <body className="bg-slate-50">
+  //         <SessionProviderWrapper>
+  //           <main>{children}</main>
+  //         </SessionProviderWrapper>
+  //       </body>
+  //     </html>
+  //   );
+  // }
 
   // ✅ 3. Regular User Pages: Default Layout with Navbar & Footer
   return (
