@@ -1,15 +1,12 @@
 "use client";
-
 import { useEffect, useState } from "react";
+import { Loader2, Briefcase, Calendar, CheckCircle2, Clock, XCircle, FileText } from "lucide-react";
+// જે નામથી તમારું Sidebar હોય તે અહીં ઈમ્પોર્ટ કરો
+import UserSidebar from "@/components/UserSidebar"; 
 
 export default function UserStatusPage() {
   const [applications, setApplications] = useState([]);
-  const [summary, setSummary] = useState({
-    total: 0,
-    approved: 0,
-    pending: 0,
-    rejected: 0,
-  });
+  const [summary, setSummary] = useState({ total: 0, approved: 0, pending: 0, rejected: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -17,22 +14,17 @@ export default function UserStatusPage() {
       try {
         const res = await fetch("/api/user/applications");
         const data = await res.json();
-
-        if (!res.ok) {
-          console.error("Error:", data.error || "Unknown error");
-          setLoading(false);
-          return;
+        if (data.ok) {
+          setApplications(data.applications);
+          setSummary({
+            total: data.total,
+            approved: data.approved,
+            pending: data.pending,
+            rejected: data.rejected,
+          });
         }
-
-        setApplications(data.applications || []);
-        setSummary({
-          total: data.total || 0,
-          approved: data.approved || 0,
-          pending: data.pending || 0,
-          rejected: data.rejected || 0,
-        });
       } catch (err) {
-        console.error("Error fetching applications:", err);
+        console.error("Error:", err);
       } finally {
         setLoading(false);
       }
@@ -40,243 +32,125 @@ export default function UserStatusPage() {
     fetchApplications();
   }, []);
 
-  if (loading)
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <p className="text-gray-600 animate-pulse">
-          Loading your applications...
-        </p>
-      </div>
-    );
+  if (loading) return (
+    <div className="flex flex-col justify-center items-center min-h-screen bg-slate-50">
+      <Loader2 className="animate-spin text-indigo-600 mb-4" size={40} />
+      <p className="text-slate-500 font-bold tracking-widest uppercase text-[10px] text-center">
+        Fetching your <br/> application journey...
+      </p>
+    </div>
+  );
 
-//   return (
-//     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 md:p-10">
-//       <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg p-4 sm:p-6 md:p-10">
-//         {/* ✅ Header */}
-//         <div className="mb-8 text-center">
-//           <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
-//             My Applications
-//           </h1>
-//           <p className="text-gray-500 text-sm mt-1">
-//             Track the status of all jobs you’ve applied for.
-//           </p>
-//         </div>
-
-//         {/* ✅ Summary Cards */}
-//         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-//           <StatCard label="Total" value={summary.total} color="text-blue-600" />
-//           <StatCard
-//             label="Approved"
-//             value={summary.approved}
-//             color="text-green-600"
-//           />
-//           <StatCard
-//             label="Pending"
-//             value={summary.pending}
-//             color="text-yellow-600"
-//           />
-//           <StatCard
-//             label="Rejected"
-//             value={summary.rejected}
-//             color="text-red-600"
-//           />
-//         </div>
-
-//         {/* ✅ Applications Table */}
-//         {applications.length > 0 ? (
-//           <div className="overflow-x-auto">
-//             <table className="min-w-full border border-gray-200 rounded-lg overflow-hidden text-sm">
-//               <thead className="bg-gray-100">
-//                 <tr>
-//                   <th className="px-3 py-3 text-left font-semibold text-gray-600">
-//                     #
-//                   </th>
-//                   <th className="px-3 py-3 text-left font-semibold text-gray-600">
-//                     Job Title
-//                   </th>
-//                   <th className="px-3 py-3 text-left font-semibold text-gray-600">
-//                     Type
-//                   </th>
-//                   <th className="px-3 py-3 text-left font-semibold text-gray-600">
-//                     Experience
-//                   </th>
-//                   <th className="px-3 py-3 text-left font-semibold text-gray-600">
-//                     Status
-//                   </th>
-//                   <th className="px-3 py-3 text-left font-semibold text-gray-600">
-//                     Applied On
-//                   </th>
-//                 </tr>
-//               </thead>
-//               <tbody>
-//                 {applications.map((app, i) => (
-//                   <tr
-//                     key={app._id}
-//                     className="border-t hover:bg-gray-50 transition duration-150"
-//                   >
-//                     <td className="px-3 py-3 text-gray-600">{i + 1}</td>
-//                     <td className="px-3 py-3 font-medium text-gray-800">
-//                       {app.job?.title || "N/A"}
-//                     </td>
-//                     <td className="px-3 py-3 text-gray-600">
-//                       {app.job?.type || "N/A"}
-//                     </td>
-//                     <td className="px-3 py-3 text-gray-600">
-//                       {app.job?.experienceLevel || "N/A"}
-//                     </td>
-//                     <td className="px-3 py-3">
-//                       <StatusBadge status={app.status} />
-//                     </td>
-//                     <td className="px-3 py-3 text-gray-600">
-//                       {new Date(app.createdAt).toLocaleDateString()}
-//                     </td>
-//                   </tr>
-//                 ))}
-//               </tbody>
-//             </table>
-//           </div>
-//         ) : (
-//           <p className="text-center text-gray-500 mt-10">
-//             You haven’t applied for any jobs yet.
-//           </p>
-//         )}
-//       </div>
-//     </div>
-//   );
-// }
-
-// /* ✅ Reusable Components */
-// function StatCard({ label, value, color }) {
-//   return (
-//     <div className="bg-gray-100 rounded-xl p-4 text-center shadow-sm hover:shadow-md transition">
-//       <p className="text-sm text-gray-600">{label}</p>
-//       <p className={`text-xl md:text-2xl font-bold ${color}`}>{value}</p>
-//     </div>
-//   );
-// }
-
-// function StatusBadge({ status = "" }) {
-//   const base = "px-3 py-1 text-xs font-semibold rounded-full";
-//   const normalized = status.toLowerCase();
-
-//   switch (normalized) {
-//     case "approved":
-//       return <span className={`${base} bg-green-100 text-green-700`}>Approved</span>;
-//     case "rejected":
-//       return <span className={`${base} bg-red-100 text-red-700`}>Rejected</span>;
-//     case "pending":
-//     default:
-//       return <span className={`${base} bg-yellow-100 text-yellow-700`}>Pending</span>;
-//   }
-// }
-return (
-  <div className="min-h-screen bg-slate-50 p-4 sm:p-6 md:p-10 font-sans">
-    <div className="max-w-6xl mx-auto bg-white rounded-[32px] shadow-2xl shadow-indigo-100/50 p-6 sm:p-8 md:p-12 border border-slate-100">
+  return (
+    // ૧. ફ્લેક્સ લેઆઉટ ઉમેર્યું જેથી સાઈડબાર પ્રોપર દેખાય
+    <div className="flex min-h-screen bg-[#F8FAFC]">
       
-      {/* ✅ Header */}
-      <div className="mb-10 text-center md:text-left flex flex-col md:flex-row md:items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-            My Applications
-          </h1>
-          <p className="text-slate-500 text-sm mt-2 font-medium">
-            Track and manage the status of all your job applications in one place.
-          </p>
-        </div>
-        <div className="hidden md:block">
-           <span className="text-xs font-bold text-slate-400 uppercase tracking-widest bg-slate-100 px-3 py-1 rounded-full">
-             User Dashboard
-           </span>
-        </div>
-      </div>
+      {/* Sidebar - activePage "status" રાખજો જેથી તે હાઈલાઈટ થાય */}
+      <UserSidebar activePage="status" />
 
-      {/* ✅ Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-        <StatCard label="Total Applied" value={summary.total} color="text-indigo-600" bgColor="bg-indigo-50" />
-        <StatCard label="Approved" value={summary.approved} color="text-emerald-600" bgColor="bg-emerald-50" />
-        <StatCard label="Pending" value={summary.pending} color="text-amber-600" bgColor="bg-amber-50" />
-        <StatCard label="Rejected" value={summary.rejected} color="text-rose-600" bgColor="bg-rose-50" />
-      </div>
+      {/* Main Content Area */}
+      <main className="flex-1 p-4 sm:p-6 md:p-10 overflow-y-auto">
+        <div className="max-w-6xl mx-auto">
+          
+          {/* Header */}
+          <div className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div>
+              <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-2">My Journey</h1>
+              <p className="text-slate-500 font-medium">Track all your job applications and their current status</p>
+            </div>
+            
+          </div>
 
-      {/* ✅ Applications Table */}
-      {applications.length > 0 ? (
-        <div className="overflow-hidden border border-slate-100 rounded-[24px] shadow-sm bg-white">
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-100">
-                  <th className="px-6 py-4 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">#</th>
-                  <th className="px-6 py-4 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Job Title</th>
-                  <th className="px-6 py-4 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Type</th>
-                  <th className="px-6 py-4 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Experience</th>
-                  <th className="px-6 py-4 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-4 text-left text-[10px] font-bold text-slate-400 uppercase tracking-wider">Applied On</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {applications.map((app, i) => (
-                  <tr
-                    key={app._id}
-                    className="hover:bg-indigo-50/30 transition-colors duration-200"
-                  >
-                    <td className="px-6 py-4 text-slate-400 font-medium">{i + 1}</td>
-                    <td className="px-6 py-4">
-                      <p className="font-bold text-slate-800 text-base">{app.job?.title || "N/A"}</p>
-                      <p className="text-[10px] text-indigo-500 font-bold uppercase tracking-tighter">JobConnect Verified</p>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-md font-bold text-[11px]">
-                        {app.job?.type || "N/A"}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-slate-600 font-semibold italic">
-                      {app.job?.experienceLevel || "N/A"}
-                    </td>
-                    <td className="px-6 py-4">
-                      <StatusBadge status={app.status} />
-                    </td>
-                    <td className="px-6 py-4 text-slate-500 font-medium">
-                      {new Date(app.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          {/* Summary Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+            <StatCard label="Total Applied" value={summary.total} icon={<FileText size={20}/>} color="text-indigo-600" bgColor="bg-indigo-50" />
+            <StatCard label="Approved" value={summary.approved} icon={<CheckCircle2 size={20}/>} color="text-emerald-600" bgColor="bg-emerald-50" />
+            <StatCard label="Pending" value={summary.pending} icon={<Clock size={20}/>} color="text-amber-600" bgColor="bg-amber-50" />
+            <StatCard label="Rejected" value={summary.rejected} icon={<XCircle size={20}/>} color="text-rose-600" bgColor="bg-rose-50" />
+          </div>
+
+          {/* Table Section */}
+          <div className="bg-white rounded-[32px] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden">
+            {applications.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead>
+                    <tr className="bg-slate-50/50 border-b border-slate-100">
+                      <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center w-16">#</th>
+                      <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Job Details</th>
+                      <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                      <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Applied Date</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {applications.map((app, i) => (
+                      <tr key={app._id} className="hover:bg-indigo-50/20 transition-all group">
+                        <td className="px-8 py-6 text-center font-bold text-slate-300 group-hover:text-indigo-600 transition-colors">{i + 1}</td>
+                        <td className="px-8 py-6">
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                              <Briefcase size={20} />
+                            </div>
+                            <div>
+                              <p className="font-bold text-slate-900 text-lg leading-tight">{app.role || "Job Role"}</p>
+                              <p className="text-[10px] text-indigo-500 font-black uppercase tracking-widest mt-1 italic">Verified Application</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-8 py-6">
+                          <StatusBadge status={app.status} />
+                        </td>
+                        <td className="px-8 py-6">
+                          <div className="flex items-center gap-2 text-slate-500 font-bold text-sm">
+                            <Calendar size={14} className="text-slate-300"/>
+                            {new Date(app.appliedAt || app.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="p-20 text-center">
+                <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <FileText className="text-slate-200" size={40} />
+                </div>
+                <p className="text-slate-800 text-xl font-black">No Applications Yet</p>
+                <p className="text-slate-400 mt-2 font-medium">You haven't applied to any jobs. Explore careers to get started!</p>
+              </div>
+            )}
           </div>
         </div>
-      ) : (
-        <div className="text-center py-20 bg-slate-50 rounded-[32px] border-2 border-dashed border-slate-200">
-          <div className="text-5xl mb-4">📁</div>
-          <p className="text-slate-800 text-xl font-bold">No applications found</p>
-          <p className="text-slate-500 mt-1">Start applying for jobs to see them listed here.</p>
-        </div>
-      )}
+      </main>
     </div>
-  </div>
-);
+  );
+}
 
-/* ✅ Reusable Components with New Theme */
-function StatCard({ label, value, color, bgColor }) {
+// UI Helper components (StatCard and StatusBadge) remains same as before...
+function StatCard({ label, value, color, bgColor, icon }) {
   return (
-    <div className={`${bgColor} rounded-3xl p-6 text-center transition-all hover:scale-[1.02] hover:shadow-lg hover:shadow-indigo-100/50`}>
-      <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">{label}</p>
-      <p className={`text-3xl md:text-4xl font-black ${color}`}>{value}</p>
+    <div className={`${bgColor} rounded-[24px] p-6 transition-all hover:scale-[1.02] border border-white/50 shadow-sm relative overflow-hidden group`}>
+      <div className={`absolute -right-2 -bottom-2 opacity-10 group-hover:scale-125 transition-transform ${color}`}>
+        {icon}
+      </div>
+      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{label}</p>
+      <p className={`text-4xl font-black ${color}`}>{value}</p>
     </div>
   );
 }
 
 function StatusBadge({ status = "" }) {
-  const base = "px-4 py-1.5 text-[11px] font-black uppercase tracking-widest rounded-full shadow-sm";
-  const normalized = status.toLowerCase();
+  const normalized = status?.toLowerCase() || "pending";
+  const styles = {
+    approved: "bg-emerald-100 text-emerald-700 border-emerald-200",
+    rejected: "bg-rose-100 text-rose-700 border-rose-200",
+    pending: "bg-amber-100 text-amber-700 border-amber-200"
+  };
 
-  switch (normalized) {
-    case "approved":
-      return <span className={`${base} bg-emerald-100 text-emerald-700 border border-emerald-200`}>Approved</span>;
-    case "rejected":
-      return <span className={`${base} bg-rose-100 text-rose-700 border border-rose-200`}>Rejected</span>;
-    case "pending":
-    default:
-      return <span className={`${base} bg-amber-100 text-amber-700 border border-amber-200`}>Pending</span>;
-  }
-}
+  return (
+    <span className={`px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-full border shadow-sm ${styles[normalized] || styles.pending}`}>
+      {normalized}
+    </span>
+  );
 }

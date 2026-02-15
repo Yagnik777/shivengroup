@@ -6,7 +6,80 @@ import OTP from "@/models/EmailOTP";
 import bcrypt from "bcryptjs";
 import nodemailer from "nodemailer";
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
+/* --------------------------------------------------------
+    1️⃣ GET: પ્રોફાઇલ ડિસ્પ્લે કરવા માટે
+-------------------------------------------------------- */
+export async function GET(req) {
+  try {
+    await connectMongo();
+
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user?.email) {
+      return NextResponse.json({ success: false, error: "તમે લોગિન કરેલ નથી" }, { status: 401 });
+    }
+
+    const email = session.user.email; 
+    const user = await ServiceProvider.findOne({ email }).select("-password");
+
+    if (!user) {
+      return NextResponse.json({ success: false, error: "પ્રોવાઈડર મળ્યો નથી" }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, user });
+  } catch (err) {
+    console.error("GET PROFILE ERROR:", err);
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  }
+}
+
+/* --------------------------------------------------------
+    2️⃣ PUT: પ્રોફાઇલ અપડેટ કરવા માટે
+-------------------------------------------------------- */
+export async function PUT(req) {
+  try {
+    await connectMongo();
+
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user?.email) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const { fullName, providerName, serviceCategory, experience, location, mobile } = body;
+    const email = session.user.email;
+
+    const updatedUser = await ServiceProvider.findOneAndUpdate(
+      { email: email },
+      { 
+        $set: { 
+          fullName, 
+          providerName, 
+          serviceCategory, 
+          experience, 
+          location, 
+          mobile 
+        } 
+      },
+      { new: true } 
+    );
+
+    if (!updatedUser) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, user: updatedUser });
+  } catch (err) {
+    console.error("PUT PROFILE ERROR:", err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+
+/* --------------------------------------------------------
+    3️⃣ POST: રજીસ્ટ્રેશન, OTP સેન્ડ અને વેરિફિકેશન માટે
+-------------------------------------------------------- */
 export async function POST(req) {
   try {
     await connectMongo();
@@ -14,18 +87,15 @@ export async function POST(req) {
     const body = await req.json().catch(() => ({}));
     const { 
       action, email, otp, password, fullName, username, 
-      mobile, providerName, serviceCategory, location 
+      mobile, providerName, serviceCategory, location,
+      experience 
     } = body;
 
-    /* --------------------------------------------------------
-        1️⃣ ACTION → SEND OTP
-    -------------------------------------------------------- */
+    // --- A. SEND OTP ---
     if (action === "send-otp") {
       if (!email) return NextResponse.json({ error: "Email is required" }, { status: 400 });
 
-      // જૂના OTP કાઢી નાખો
       await OTP.deleteMany({ email });
-
       const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
       const expiresAt = new Date(Date.now() + 5 * 60 * 1000); 
 
@@ -49,14 +119,10 @@ export async function POST(req) {
       return NextResponse.json({ message: "OTP sent successfully!" });
     }
 
-    /* --------------------------------------------------------
-        2️⃣ ACTION → VERIFY OTP (અહીં જ ફેરફાર છે)
-    -------------------------------------------------------- */
+    // --- B. VERIFY OTP ---
     if (action === "verify-otp") {
       if (!email || !otp) return NextResponse.json({ error: "Email & OTP are required" }, { status: 400 });
 
-      // અહીં આપણે ServiceProvider.findOne() નથી કરવાનું, કારણ કે તે હજુ બન્યો જ નથી!
-      // ફક્ત OTP ટેબલમાં ચેક કરો
       const record = await OTP.findOne({ email }).sort({ createdAt: -1 });
 
       if (!record || record.otp !== otp)
@@ -65,19 +131,15 @@ export async function POST(req) {
       if (record.expiresAt < new Date())
         return NextResponse.json({ error: "OTP has expired" }, { status: 400 });
 
-      // જો બધું સાચું હોય તો સીધું રિટર્ન કરો
       return NextResponse.json({ message: "OTP verified successfully!" });
     }
 
-    /* --------------------------------------------------------
-        3️⃣ ACTION → REGISTER (ફાઈનલ ડેટાબેઝ એન્ટ્રી)
-    -------------------------------------------------------- */
+    // --- C. REGISTER ---
     if (action === "register") {
       if (!fullName || !email || !password || !username) {
         return NextResponse.json({ error: "Required fields are missing" }, { status: 400 });
       }
 
-      // અહીં ચેક કરો કે ઈમેઈલ કે યુઝરનેમ પહેલેથી કોઈએ વાપર્યું તો નથી ને?
       const existing = await ServiceProvider.findOne({ $or: [{ email }, { username }] });
       if (existing) {
         return NextResponse.json({ error: "Email or Username already exists" }, { status: 400 });
@@ -85,7 +147,6 @@ export async function POST(req) {
 
       const hashedPassword = await bcrypt.hash(password, 10);
 
-      // હવે ડેટાબેઝમાં સેવ કરો
       await ServiceProvider.create({
         fullName,
         username,
@@ -94,14 +155,13 @@ export async function POST(req) {
         providerName,
         serviceCategory,
         location,
+        experience, 
         password: hashedPassword,
         isVerified: true,
         role: "service_provider",
       });
 
-      // કામ પતી ગયું એટલે OTP ડીલીટ કરી નાખો
       await OTP.deleteMany({ email });
-
       return NextResponse.json({ message: "Service Provider registered successfully!" });
     }
 
@@ -109,7 +169,6 @@ export async function POST(req) {
 
   } catch (err) {
     console.error("SERVER ERROR:", err);
-    // આ JSON રિસ્પોન્સ પેલી 'Unexpected token E' વાળી ભૂલ અટકાવશે
     return NextResponse.json({ error: err.message || "Internal Server Error" }, { status: 500 });
   }
 }

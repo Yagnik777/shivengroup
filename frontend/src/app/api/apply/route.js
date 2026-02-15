@@ -5,7 +5,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 export const dynamic = "force-dynamic";
-export const config = { api: { bodyParser: false } };
+//export const config = { api: { bodyParser: false } };
 
 export async function POST(req) {
   try {

@@ -5,9 +5,9 @@ import ExcelCandidate from "@/models/ExcelCandidate";
 import User from "@/models/User";
 import { read, utils } from "xlsx";
 
-export const config = {
-  api: { bodyParser: false },
-};
+// export const config = {
+//   api: { bodyParser: false },
+// };
 
 export async function POST(req) {
   try {

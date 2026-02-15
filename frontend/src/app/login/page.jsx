@@ -313,7 +313,7 @@ export default function LoginPage() {
         // ✨ સર્વિસ પ્રોવાઈડર માટે નવું રીડાયરેક્ટ ઉમેર્યું
         router.replace("/serviceprovider/dashboard"); 
       } else {
-        router.replace("/dashboard"); // સામાન્ય User માટે
+        router.replace("/user/dashboard"); // સામાન્ય User માટે
       }
       
     } catch (err) {

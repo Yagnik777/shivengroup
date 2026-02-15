@@ -1,3 +1,4 @@
+//src/app/api/candidates/[id]/route.js
 import connectMongo from "@/lib/mongodb";
 import Candidate from "@/models/Candidate";
 

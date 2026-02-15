@@ -6,7 +6,7 @@ import fs from "fs";
 import path from "path";
 
 export const dynamic = "force-dynamic";
-export const config = { api: { bodyParser: false } };
+//export const config = { api: { bodyParser: false } };
 
 // ---------------- GET - fetch single application ----------------
 export async function GET(req, context) {

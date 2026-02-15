@@ -5,7 +5,7 @@ const CompanySchema = new mongoose.Schema(
     recruiterId: {
       type: String,
       required: true,
-      unique: true, // One recruiter can manage only one company
+      unique: true, 
     },
     name: {
       type: String,
@@ -24,7 +24,15 @@ const CompanySchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
-    location: {
+    email: { // નવું ઉમેર્યું
+      type: String,
+      trim: true,
+    },
+    phone: { // નવું ઉમેર્યું
+      type: String,
+      trim: true,
+    },
+    address: { // location ની જગ્યાએ address
       type: String,
       trim: true,
     },
@@ -47,20 +55,19 @@ const CompanySchema = new mongoose.Schema(
       trim: true,
     },
     logo: {
-      type: String, // URL of the uploaded image
+      type: String, 
       default: "",
     },
     coverImage: {
-      type: String, // URL of the uploaded image
+      type: String, 
       default: "",
     },
     specialties: {
-      type: [String], // Stored as an array for easier filtering/searching
+      type: [String], 
       default: [],
     },
   },
   { timestamps: true }
 );
 
-// This prevents Mongoose from creating the model multiple times during Hot Reload in Next.js
 export default mongoose.models.Company || mongoose.model("Company", CompanySchema);

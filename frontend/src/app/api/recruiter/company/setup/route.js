@@ -1,11 +1,9 @@
+//src/app/api/recruiter/company/setup/route.js
 export const runtime = "nodejs";
 
 import { NextResponse } from "next/server";
 import connectMongo from "@/lib/mongodb";
 import Company from "@/models/Company";
-
-// Note: I assume you have a way to get the current user's ID (e.g., from a cookie or session)
-// For now, I'll include a placeholder for recruiterId.
 
 export async function POST(req) {
   try {
@@ -17,7 +15,9 @@ export async function POST(req) {
       tagline, 
       industry, 
       website, 
-      location, 
+      email,    // નવું ઉમેર્યું
+      phone,    // નવું ઉમેર્યું
+      address,  // location ની જગ્યાએ address
       companySize, 
       founded, 
       description, 
@@ -29,13 +29,9 @@ export async function POST(req) {
       return NextResponse.json({ error: "Company name is required" }, { status: 400 });
     }
 
-    // 2. Mocking a Recruiter ID (In production, get this from auth session/token)
-    // const session = await getServerSession(authOptions);
-    // const recruiterId = session.user.id;
     const recruiterId = "TEMP_RECRUITER_ID"; 
 
     // 3. Update if exists, otherwise Create (Upsert)
-    // This ensures a recruiter only has one company profile
     const updatedCompany = await Company.findOneAndUpdate(
       { recruiterId: recruiterId },
       {
@@ -43,13 +39,15 @@ export async function POST(req) {
         tagline,
         industry,
         website,
-        location,
+        email,    // નવું ઉમેર્યું
+        phone,    // નવું ઉમેર્યું
+        address,  // location ની જગ્યાએ address
         companySize,
         founded,
         description,
-        specialties, // Stored as a string or array depending on your preference
+        specialties, 
       },
-      { new: true, upsert: true } // Create if doesn't exist
+      { new: true, upsert: true } 
     );
 
     return NextResponse.json({ 
@@ -64,11 +62,10 @@ export async function POST(req) {
   }
 }
 
-// Optional: GET route to fetch the profile data for the edit page
 export async function GET(req) {
   try {
     await connectMongo();
-    const recruiterId = "TEMP_RECRUITER_ID"; // Replace with real auth ID
+    const recruiterId = "TEMP_RECRUITER_ID"; 
 
     const company = await Company.findOne({ recruiterId });
     

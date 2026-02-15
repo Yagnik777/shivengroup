@@ -13,10 +13,10 @@ export default function Sidebar({ activePage }) {
     <>
       {/* --- મોબાઈલ માટે ઉપરનો બાર (જ્યારે સાઈડબાર બંધ હોય) --- */}
       <div className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-slate-100 sticky top-0 z-50">
-        <div className="flex items-center gap-2">
+        {/* <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-black italic text-sm">S</div>
           <span className="text-lg font-black tracking-tight text-slate-800">Shiven <span className="text-indigo-600">Partner</span></span>
-        </div>
+        </div> */}
         <button onClick={toggleSidebar} className="p-2 bg-slate-50 rounded-xl text-slate-600 active:scale-95 transition-all">
           {isOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
@@ -43,12 +43,12 @@ export default function Sidebar({ activePage }) {
         </button>
 
         {/* Logo Section */}
-        <div className="flex items-center gap-2 mb-10 px-2">
+        {/* <div className="flex items-center gap-2 mb-10 px-2">
           <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-black italic">S</div>
           <span className="text-xl font-black tracking-tight text-slate-800">
             Shiven <span className="text-indigo-600">Partner</span>
           </span>
-        </div>
+        </div> */}
 
         {/* Navigation Links */}
         <nav className="space-y-2 flex-1 overflow-y-auto no-scrollbar">
@@ -64,10 +64,9 @@ export default function Sidebar({ activePage }) {
             <NavItem icon="📅" label="Bookings" active={activePage === "bookings"} />
           </Link>
 
-          <Link href="/serviceprovider/earnings" onClick={() => setIsOpen(false)}>
-            <NavItem icon="💰" label="Earnings" active={activePage === "earnings"} />
+          <Link href="/serviceprovider/serviceform" onClick={() => setIsOpen(false)}>
+            <NavItem icon="➕" label="Post Service" active={activePage === "serviceform"} />
           </Link>
-
           <Link href="/serviceprovider/profile" onClick={() => setIsOpen(false)}>
             <NavItem icon="👤" label="My Profile" active={activePage === "profile"} />
           </Link>

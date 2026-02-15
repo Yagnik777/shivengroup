@@ -59,12 +59,13 @@ export default function Sidebar({ activePage }) {
           <Link href="/recruiter/candidate" onClick={() => setIsOpen(false)}>
             <NavItem icon="👥" label="Candidates" active={activePage === "Candidate"} />
           </Link>
+          <Link href="/recruiter/livejobs" onClick={() => setIsOpen(false)}>
+            <NavItem icon="📄" label="Live Jobs" active={activePage === "livejobs"} />
+          </Link>
           <Link href="/recruiter/profile" onClick={() => setIsOpen(false)}>
             <NavItem icon="🏢" label="Company Profile" active={activePage === "Profile"} />
           </Link>
-          <Link href="/recruiter/setup-profile" onClick={() => setIsOpen(false)}>
-            <NavItem icon="⚙️" label="Setup Profile" active={activePage === "setup-profile"} />
-          </Link>
+          
           <NavItem icon="⚙️" label="Settings" />
         </nav>
 

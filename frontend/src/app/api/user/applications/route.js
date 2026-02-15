@@ -1,38 +1,36 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { NextResponse } from "next/server";
 import connectMongo from "@/lib/mongodb";
 import Application from "@/models/Application";
-import Job from "@/models/Job";
-
-export const dynamic = "force-dynamic";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/app/api/auth/[...nextauth]/route";
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email)
-      return new Response(JSON.stringify({ message: "Unauthorized" }), { status: 401 });
-
     await connectMongo();
+    
+    // લોગિન યુઝરની ડિટેલ્સ મેળવો
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-    const userEmail = session.user.email;
-    const applications = await Application.find({ email: userEmail })
-      .populate("job", "title jobCategory type experienceLevel")
-      .sort({ createdAt: -1 })
-      .lean();
+    // યુઝરના ઈમેલ દ્વારા તેની બધી એપ્લિકેશન શોધો
+    const apps = await Application.find({ email: session.user.email }).sort({ appliedAt: -1 });
 
-    // ✅ Fix case-sensitive comparison
+    // Summary ગણતરી કરો
     const summary = {
-      total: applications.length,
-      approved: applications.filter(a => a.status?.toLowerCase() === "approved").length,
-      pending: applications.filter(a => a.status?.toLowerCase() === "pending").length,
-      rejected: applications.filter(a => a.status?.toLowerCase() === "rejected").length,
+      total: apps.length,
+      approved: apps.filter(a => a.status === "Approved").length,
+      pending: apps.filter(a => a.status === "Pending" || !a.status).length,
+      rejected: apps.filter(a => a.status === "Rejected").length,
     };
 
-    return new Response(JSON.stringify({ applications, ...summary }), { status: 200 });
-  } catch (error) {
-    console.error("❌ Error fetching user applications:", error);
-    return new Response(JSON.stringify({ message: "Server error", error: error.message }), {
-      status: 500,
+    return NextResponse.json({ 
+      ok: true, 
+      applications: apps, 
+      ...summary 
     });
+  } catch (err) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

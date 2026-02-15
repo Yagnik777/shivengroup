@@ -1,24 +1,102 @@
 "use client";
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useSession } from "next-auth/react"; // ✅ Session માટે
+import { useRouter } from "next/navigation"; // ✅ Redirect માટે
 import { 
-  Users, MapPin, Briefcase, 
-  Coffee, Laptop, Heart, 
-  ArrowRight, Search, Zap,
-  Globe, Rocket
+  MapPin, Coffee, Laptop, Heart, 
+  ArrowRight, Zap, Rocket, Loader2, Search, Briefcase, Clock, X, Building2, Globe, Users
 } from 'lucide-react';
 
 const CareersPage = () => {
+  const { data: session } = useSession(); // ✅ યુઝર લોગિન છે કે નહીં તે ચેક કરવા
+  const router = useRouter();
+  
+  const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('All');
+  const [typeFilter, setTypeFilter] = useState('All');
+  const [jobs, setJobs] = useState([]); 
+  const [loading, setLoading] = useState(true);
+  
+  const [selectedJob, setSelectedJob] = useState(null);
+  const [companyDetails, setCompanyDetails] = useState(null);
+  const [loadingCompany, setLoadingCompany] = useState(false);
 
-  const jobs = [
-    { id: 1, title: "Senior AI Engineer", dept: "Engineering", type: "Remote", location: "Global" },
-    { id: 2, title: "Product Designer", dept: "Design", type: "Hybrid", location: "San Francisco" },
-    { id: 3, title: "Career Coach Lead", dept: "Operations", type: "Full-time", location: "London" },
-    { id: 4, title: "ATS Algorithm Researcher", dept: "Engineering", type: "Remote", location: "Global" },
-    { id: 5, title: "Growth Marketer", dept: "Marketing", type: "Full-time", location: "New York" },
-  ];
+  // ૧. બધી જોબ્સ ફેચ કરવા માટે
+  const fetchJobs = async () => {
+    try {
+      const res = await fetch('/api/jobs', { cache: 'no-store' });
+      const data = await res.json();
+      const activeJobs = Array.isArray(data) ? data.filter(j => j.status === 'active' || j.published === true) : [];
+      setJobs(activeJobs);
+    } catch (error) {
+      console.error("Error fetching jobs:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ૨. કંપની પ્રોફાઇલ ફેચ કરવા માટે
+  const fetchCompanyProfile = async (job) => {
+    setLoadingCompany(true);
+    try {
+      const targetId = job.recruiterId || "TEMP_RECRUITER_ID"; 
+      const res = await fetch(`/api/recruiter/${targetId}`);
+      const result = await res.json();
+      if (result.ok) {
+        setCompanyDetails(result.data);
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    } finally {
+      setLoadingCompany(false);
+    }
+  };
+
+  // ✅ ૩. Apply Logic (Login Check સાથે)
+  const handleApply = async () => {
+    // પહેલા ચેક કરો કે યુઝર લોગિન છે કે નહીં
+    if (!session) {
+      alert("⚠️ તમારે જોબ એપ્લાય કરવા માટે પહેલા લોગિન કરવું પડશે!");
+      router.push("/login"); // લોગિન પેજ પર મોકલી દો
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/applications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jobId: selectedJob._id,
+          recruiterId: selectedJob.recruiterId,
+          role: selectedJob.title,
+        })
+      });
+      
+      const data = await res.json();
+      
+      if (res.ok) {
+        alert("🚀 Application Sent Successfully!");
+        setSelectedJob(null); // ડ્રોઅર બંધ કરી દો
+      } else {
+        alert(data.error || "તમારી પ્રોફાઇલ અધૂરી છે!");
+      }
+    } catch (error) {
+      console.error("Error applying:", error);
+      alert("Something went wrong!");
+    }
+  };
+  
+  useEffect(() => {
+    fetchJobs();
+  }, []);
+
+  useEffect(() => {
+    if (selectedJob) {
+      fetchCompanyProfile(selectedJob);
+    }
+  }, [selectedJob]);
 
   const perks = [
     { icon: <Laptop size={24} />, title: "Remote First", desc: "Work from anywhere in the world." },
@@ -27,128 +105,155 @@ const CareersPage = () => {
     { icon: <Rocket size={24} />, title: "Equity", desc: "Own a piece of the future of hiring." },
   ];
 
-  const filteredJobs = filter === 'All' ? jobs : jobs.filter(j => j.dept === filter);
+  const filteredJobs = jobs.filter(job => {
+    const matchesFilter = filter === 'All' || job.category === filter || job.jobCategory === filter;
+    const matchesType = typeFilter === 'All' || job.jobType === typeFilter || job.type === typeFilter;
+    const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          job.location.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesFilter && matchesSearch && matchesType;
+  });
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white font-sans selection:bg-indigo-100 selection:text-indigo-900">
       {/* Hero Section */}
-      <section className="relative pt-32 pb-20 px-6 overflow-hidden bg-slate-900">
-        <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10" />
+      <section className="relative pt-32 pb-32 px-6 overflow-hidden bg-slate-950">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-indigo-900/20 via-slate-950 to-slate-950" />
         <div className="max-w-6xl mx-auto text-center relative z-10">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-sm font-bold mb-8"
-          >
-            <Zap size={16} fill="currentColor" /> <span>We are growing fast!</span>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-indigo-400 text-sm font-bold mb-8 backdrop-blur-md">
+            <Zap size={16} className="fill-indigo-400" /> <span>Join the Revolution</span>
           </motion.div>
-          
-          <motion.h1 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="text-5xl md:text-8xl font-black text-white mb-8 tracking-tighter"
-          >
-            Build the future of <br/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">Human Capital.</span>
+          <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="text-6xl md:text-8xl font-black text-white mb-8 tracking-tight">
+            Design your <br/> <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-cyan-400 to-emerald-400">Own Destiny.</span>
           </motion.h1>
-          <p className="text-slate-400 text-xl max-w-2xl mx-auto leading-relaxed">
-            We’re looking for visionaries to help us bridge the gap between education, hiring, and philanthropy.
-          </p>
+          <p className="text-slate-400 text-xl max-w-2xl mx-auto leading-relaxed font-medium">We’re not just building products; we’re building a culture of excellence and empathy.</p>
         </div>
       </section>
 
-      {/* Perks / Culture Section */}
-      <section className="py-24 px-6 max-w-7xl mx-auto">
-        <div className="grid md:grid-cols-4 gap-8">
+      {/* Perks Section */}
+      <section className="py-24 px-6 max-w-7xl mx-auto -mt-16 relative z-20">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {perks.map((perk, i) => (
-            <motion.div
-              key={i}
-              whileHover={{ y: -10 }}
-              className="p-8 rounded-[2.5rem] bg-slate-50 border border-slate-100 transition-all"
-            >
-              <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center mb-6 text-indigo-600">
-                {perk.icon}
-              </div>
-              <h3 className="text-lg font-black text-slate-900 mb-2">{perk.title}</h3>
-              <p className="text-slate-500 text-sm leading-relaxed">{perk.desc}</p>
+            <motion.div key={i} whileHover={{ y: -8 }} className="p-8 rounded-[2.5rem] bg-white border border-slate-100 shadow-xl shadow-slate-200/50 transition-all">
+              <div className="w-14 h-14 rounded-2xl bg-indigo-50 flex items-center justify-center mb-6 text-indigo-600">{perk.icon}</div>
+              <h3 className="text-xl font-black text-slate-900 mb-2">{perk.title}</h3>
+              <p className="text-slate-500 text-sm leading-relaxed font-medium">{perk.desc}</p>
             </motion.div>
           ))}
         </div>
       </section>
 
       {/* Job Board Section */}
-      <section className="py-24 px-6 bg-slate-50">
+      <section className="py-24 px-6 bg-slate-50/50">
         <div className="max-w-5xl mx-auto">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-16">
-            <div>
-              <h2 className="text-4xl font-black text-slate-900 mb-2">Open Roles</h2>
-              <p className="text-slate-500 font-medium">Find your place in our global team.</p>
-            </div>
-
-            <div className="flex gap-2 bg-white p-2 rounded-2xl shadow-sm border border-slate-200 overflow-x-auto">
-              {['All', 'Engineering', 'Design', 'Marketing', 'Operations'].map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setFilter(cat)}
-                  className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${
-                    filter === cat ? 'bg-indigo-600 text-white' : 'text-slate-400 hover:text-slate-900'
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
+          <div className="mb-16 space-y-10">
+            <div className="text-center md:text-left text-4xl font-black text-slate-900">Open Opportunities</div>
+            
+            <div className="bg-white p-4 rounded-[2.5rem] shadow-2xl border border-slate-100 space-y-4">
+              <div className="relative group">
+                <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                <input type="text" placeholder="Search jobs by title or location..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full pl-16 pr-6 py-5 bg-slate-50 border-none rounded-[1.8rem] outline-none font-bold text-slate-800" />
+              </div>
             </div>
           </div>
 
-          <div className="space-y-4">
-            {filteredJobs.map((job) => (
-              <motion.div
-                layout
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                key={job.id}
-                className="group bg-white p-8 rounded-[2rem] border border-slate-200 hover:border-indigo-600 hover:shadow-2xl hover:shadow-indigo-100 transition-all cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-6"
-              >
-                <div>
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className="text-xs font-black text-indigo-600 uppercase tracking-widest">{job.dept}</span>
-                    <span className="text-slate-300">•</span>
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">{job.type}</span>
-                  </div>
-                  <h3 className="text-2xl font-black text-slate-900 group-hover:text-indigo-600 transition-colors">{job.title}</h3>
-                  <div className="flex items-center gap-2 text-slate-500 mt-2 text-sm font-medium">
-                    <MapPin size={14} /> {job.location}
-                  </div>
+          <div className="space-y-6">
+            <AnimatePresence mode='popLayout'>
+              {loading ? (
+                <div className="flex flex-col items-center py-32 text-slate-400"><Loader2 className="animate-spin mb-4" size={48} /><p>Scanning Careers...</p></div>
+              ) : filteredJobs.length > 0 ? (
+                filteredJobs.map((job) => (
+                  <motion.div key={job._id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={() => setSelectedJob(job)}>
+                    <div className="group bg-white p-8 md:p-10 rounded-[3rem] border border-slate-100 hover:border-indigo-600 hover:shadow-xl transition-all cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-8">
+                      <div>
+                        <div className="flex items-center gap-3 mb-4">
+                          <span className="px-3 py-1 bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase rounded-lg">{job.category || job.jobCategory}</span>
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest"><Clock size={12} className="inline mr-1"/> {job.jobType}</span>
+                        </div>
+                        <h3 className="text-2xl md:text-3xl font-black text-slate-900 group-hover:text-indigo-600 transition-colors">{job.title}</h3>
+                        <div className="flex items-center gap-4 text-slate-500 mt-4 text-sm font-bold uppercase">
+                          <span className="flex items-center gap-1.5"><MapPin size={16} className="text-indigo-500" /> {job.location}</span>
+                        </div>
+                      </div>
+                      <div className="inline-flex items-center gap-3 bg-slate-950 text-white px-10 py-5 rounded-[1.5rem] font-black group-hover:bg-indigo-600 transition-all">
+                        Apply Now <ArrowRight size={20} />
+                      </div>
+                    </div>
+                  </motion.div>
+                ))
+              ) : (
+                <div className="text-center py-20 text-slate-400 font-bold uppercase tracking-widest">No jobs found matching your search.</div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
+      </section>
+
+      {/* Side Drawer */}
+      <AnimatePresence>
+        {selectedJob && (
+          <>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedJob(null)} className="fixed inset-0 bg-slate-950/60 backdrop-blur-sm z-[100]" />
+            <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }} className="fixed right-0 top-0 h-full w-full md:w-[600px] bg-white z-[101] shadow-2xl overflow-y-auto">
+              
+              <div className="sticky top-0 bg-white/80 backdrop-blur-md p-6 flex justify-between items-center border-b z-20">
+                <div className="flex items-center gap-3">
+                   <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white"><Building2 size={24} /></div>
+                   <div>
+                    <h2 className="font-black text-slate-900 leading-none">Company Profile</h2>
+                    <p className="text-[10px] text-slate-400 font-black uppercase mt-1">
+                      {loadingCompany ? "Loading..." : (companyDetails?.name || "Verified Partner")}
+                    </p>
+                   </div>
                 </div>
-                <button className="flex items-center gap-3 bg-slate-900 text-white px-8 py-4 rounded-2xl font-black group-hover:bg-indigo-600 transition-all">
-                  Apply Now <ArrowRight size={18} />
-                </button>
-              </motion.div>
-            ))}
-          </div>
-          
-          {filteredJobs.length === 0 && (
-            <div className="text-center py-20 bg-white rounded-[3rem] border-2 border-dashed border-slate-200">
-              <p className="text-slate-400 font-bold uppercase tracking-widest">No roles open in this department right now.</p>
-            </div>
-          )}
-        </div>
-      </section>
+                <button onClick={() => setSelectedJob(null)} className="p-3 hover:bg-slate-100 rounded-full text-slate-400"><X size={24} /></button>
+              </div>
 
-      {/* Referral/General CTA */}
-      <section className="py-24 px-6">
-        <div className="max-w-6xl mx-auto bg-indigo-600 rounded-[3rem] p-12 md:p-24 text-center text-white relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-20 -mt-20" />
-          <h2 className="text-4xl md:text-6xl font-black mb-8 leading-tight">Don't see a fit?</h2>
-          <p className="text-indigo-100 text-xl mb-12 max-w-2xl mx-auto">
-            We’re always looking for exceptional talent. If you believe you can add value to our mission, drop your resume here.
-          </p>
-          <button className="bg-white text-indigo-600 px-12 py-5 rounded-2xl font-black text-lg hover:bg-slate-900 hover:text-white transition-all shadow-2xl shadow-indigo-900/40">
-            Submit General Application
-          </button>
-        </div>
-      </section>
+              <div className="p-8 md:p-12 space-y-12">
+                <div>
+                   <span className="px-4 py-1.5 bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase rounded-full">{selectedJob.jobType}</span>
+                   <h1 className="text-4xl font-black text-slate-900 mt-4 mb-6 leading-tight">{selectedJob.title}</h1>
+                </div>
+
+                <div className="bg-indigo-50/50 p-8 rounded-[3rem] border border-indigo-100/50 space-y-4">
+                   <h4 className="text-xl font-black text-slate-900">About Company</h4>
+                   {loadingCompany ? <Loader2 className="animate-spin text-indigo-600"/> : (
+                     <>
+                      <p className="text-slate-600 font-medium">{companyDetails?.description || "Company bio goes here..."}</p>
+                      <div className="flex gap-4 pt-4">
+                        {companyDetails?.website && <a href={companyDetails.website} target="_blank" className="text-indigo-600 font-black text-xs flex items-center gap-1 hover:underline"><Globe size={14}/> Website</a>}
+                        {companyDetails?.companySize && <span className="text-slate-500 font-black text-xs flex items-center gap-1"><Users size={14}/> {companyDetails.companySize} Employees</span>}
+                      </div>
+                     </>
+                   )}
+                </div>
+
+                <div className="space-y-4">
+                   <h4 className="text-xl font-black text-slate-900">The Role</h4>
+                   <div className="text-slate-600 leading-relaxed font-medium whitespace-pre-line bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                     {selectedJob.description}
+                   </div>
+                </div>
+
+                {/* ✅ Apply Button Fix - Session Check સાથે */}
+                <div className="pt-8 border-t border-slate-100 sticky bottom-0 bg-white pb-4">
+                   <button 
+                     onClick={handleApply} 
+                     className="w-full bg-slate-950 text-white py-6 rounded-[2rem] font-black text-xl hover:bg-indigo-600 transition-all shadow-xl active:scale-95 flex items-center justify-center gap-2"
+                   >
+                     {!session && <Clock size={20} className="text-amber-400"/>}
+                     {session ? "Apply for this Position" : "Login to Apply"}
+                   </button>
+                   {!session && (
+                     <p className="text-center text-[10px] font-bold text-slate-400 uppercase mt-3 tracking-widest">
+                       Sign in required to submit application
+                     </p>
+                   )}
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
