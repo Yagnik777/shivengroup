@@ -309,7 +309,7 @@ export default function LoginPage() {
         router.replace("/admin/dashboard");
       } else if (role === "recruiter") {
         router.replace("/recruiter/dashboard");
-      } else if (role === "service_provider") {
+      } else if (role === "serviceprovider") {
         // ✨ સર્વિસ પ્રોવાઈડર માટે નવું રીડાયરેક્ટ ઉમેર્યું
         router.replace("/serviceprovider/dashboard"); 
       } else {

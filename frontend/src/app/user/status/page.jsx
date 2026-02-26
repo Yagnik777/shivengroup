@@ -1,30 +1,41 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Loader2, Briefcase, Calendar, CheckCircle2, Clock, XCircle, FileText } from "lucide-react";
-// જે નામથી તમારું Sidebar હોય તે અહીં ઈમ્પોર્ટ કરો
+import { Loader2, Briefcase, Calendar, CheckCircle2, Clock, XCircle, FileText, ChevronRight } from "lucide-react";
 import UserSidebar from "@/components/UserSidebar"; 
 
 export default function UserStatusPage() {
   const [applications, setApplications] = useState([]);
   const [summary, setSummary] = useState({ total: 0, approved: 0, pending: 0, rejected: 0 });
   const [loading, setLoading] = useState(true);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   useEffect(() => {
     const fetchApplications = async () => {
       try {
-        const res = await fetch("/api/user/applications");
+        const res = await fetch("/api/applications");
         const data = await res.json();
-        if (data.ok) {
-          setApplications(data.applications);
-          setSummary({
-            total: data.total,
-            approved: data.approved,
-            pending: data.pending,
-            rejected: data.rejected,
-          });
+        
+        // Robust data handling for different API response structures
+        let apps = [];
+        if (data.ok && Array.isArray(data.data)) {
+            apps = data.data;
+        } else if (Array.isArray(data.applications)) {
+            apps = data.applications;
+        } else if (Array.isArray(data)) {
+            apps = data;
         }
+        
+        setApplications(apps);
+        
+        // Summary Calculation Logic
+        setSummary({
+          total: apps.length,
+          approved: apps.filter(a => a.status?.toLowerCase() === 'approved').length,
+          pending: apps.filter(a => a.status?.toLowerCase() === 'pending' || !a.status).length,
+          rejected: apps.filter(a => a.status?.toLowerCase() === 'rejected').length,
+        });
       } catch (err) {
-        console.error("Error:", err);
+        console.error("Fetch Error:", err);
       } finally {
         setLoading(false);
       }
@@ -34,77 +45,99 @@ export default function UserStatusPage() {
 
   if (loading) return (
     <div className="flex flex-col justify-center items-center min-h-screen bg-slate-50">
-      <Loader2 className="animate-spin text-indigo-600 mb-4" size={40} />
-      <p className="text-slate-500 font-bold tracking-widest uppercase text-[10px] text-center">
-        Fetching your <br/> application journey...
+      <div className="relative flex items-center justify-center">
+        <Loader2 className="animate-spin text-indigo-600" size={48} />
+        <div className="absolute inset-0 scale-150 blur-2xl bg-indigo-500/10 rounded-full"></div>
+      </div>
+      <p className="text-slate-400 font-black tracking-[0.3em] uppercase text-[10px] mt-8 text-center animate-pulse">
+        Fetching your <br/> application journey
       </p>
     </div>
   );
 
   return (
-    // ૧. ફ્લેક્સ લેઆઉટ ઉમેર્યું જેથી સાઈડબાર પ્રોપર દેખાય
     <div className="flex min-h-screen bg-[#F8FAFC]">
       
-      {/* Sidebar - activePage "status" રાખજો જેથી તે હાઈલાઈટ થાય */}
-      <UserSidebar activePage="status" />
+      {/* Sidebar with proper collapse state management */}
+      <UserSidebar onCollapseChange={setIsSidebarCollapsed} />
 
-      {/* Main Content Area */}
-      <main className="flex-1 p-4 sm:p-6 md:p-10 overflow-y-auto">
-        <div className="max-w-6xl mx-auto">
+      {/* Dynamic margin based on sidebar state */}
+      <main className={`flex-1 transition-all duration-500 ease-in-out ${isSidebarCollapsed ? "lg:ml-20" : "lg:ml-72"}`}>
+        <div className="p-4 sm:p-8 md:p-12 max-w-7xl mx-auto">
           
-          {/* Header */}
-          <div className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+          {/* Header Section */}
+          <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div>
-              <h1 className="text-4xl font-black text-slate-900 tracking-tight mb-2">My Journey</h1>
-              <p className="text-slate-500 font-medium">Track all your job applications and their current status</p>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="h-1 w-10 bg-indigo-600 rounded-full"></div>
+                <p className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Candidate Dashboard</p>
+              </div>
+              <h1 className="text-5xl font-black text-slate-900 tracking-tight">My Journey</h1>
+              <p className="text-slate-500 font-medium mt-2">Check the progress of your professional applications.</p>
             </div>
             
+            <div className="bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-4">
+               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+               <p className="text-xs font-bold text-slate-600 uppercase tracking-widest">Real-time Updates</p>
+            </div>
           </div>
 
-          {/* Summary Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-            <StatCard label="Total Applied" value={summary.total} icon={<FileText size={20}/>} color="text-indigo-600" bgColor="bg-indigo-50" />
-            <StatCard label="Approved" value={summary.approved} icon={<CheckCircle2 size={20}/>} color="text-emerald-600" bgColor="bg-emerald-50" />
-            <StatCard label="Pending" value={summary.pending} icon={<Clock size={20}/>} color="text-amber-600" bgColor="bg-amber-50" />
-            <StatCard label="Rejected" value={summary.rejected} icon={<XCircle size={20}/>} color="text-rose-600" bgColor="bg-rose-50" />
+          {/* Premium Summary Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            <StatCard label="Applied" value={summary.total} icon={<FileText size={24}/>} color="text-indigo-600" bgColor="bg-indigo-50" />
+            <StatCard label="Approved" value={summary.approved} icon={<CheckCircle2 size={24}/>} color="text-emerald-600" bgColor="bg-emerald-50" />
+            <StatCard label="Pending" value={summary.pending} icon={<Clock size={24}/>} color="text-amber-600" bgColor="bg-amber-50" />
+            <StatCard label="Rejected" value={summary.rejected} icon={<XCircle size={24}/>} color="text-rose-600" bgColor="bg-rose-50" />
           </div>
 
-          {/* Table Section */}
-          <div className="bg-white rounded-[32px] border border-slate-100 shadow-xl shadow-slate-200/50 overflow-hidden">
+          {/* Modern Table Container */}
+          <div className="bg-white rounded-[40px] border border-slate-100 shadow-2xl shadow-slate-200/40 overflow-hidden">
             {applications.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-left">
                   <thead>
                     <tr className="bg-slate-50/50 border-b border-slate-100">
-                      <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center w-16">#</th>
-                      <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Job Details</th>
-                      <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
-                      <th className="px-8 py-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Applied Date</th>
+                      <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center w-20">#</th>
+                      <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Job Details</th>
+                      <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Status</th>
+                      <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Applied Date</th>
+                      <th className="px-10 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right"></th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50">
                     {applications.map((app, i) => (
-                      <tr key={app._id} className="hover:bg-indigo-50/20 transition-all group">
-                        <td className="px-8 py-6 text-center font-bold text-slate-300 group-hover:text-indigo-600 transition-colors">{i + 1}</td>
-                        <td className="px-8 py-6">
-                          <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-500 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all">
-                              <Briefcase size={20} />
+                      <tr key={app._id} className="hover:bg-slate-50/80 transition-all group cursor-default">
+                        <td className="px-10 py-8 text-center font-black text-slate-200 group-hover:text-indigo-600 transition-colors text-lg italic">
+                          {(i + 1).toString().padStart(2, '0')}
+                        </td>
+                        <td className="px-10 py-8">
+                          <div className="flex items-center gap-5">
+                            <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-400 flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white group-hover:rotate-12 transition-all duration-300 shadow-sm">
+                              <Briefcase size={22} />
                             </div>
                             <div>
-                              <p className="font-bold text-slate-900 text-lg leading-tight">{app.role || "Job Role"}</p>
-                              <p className="text-[10px] text-indigo-500 font-black uppercase tracking-widest mt-1 italic">Verified Application</p>
+                              <p className="font-black text-slate-800 text-xl tracking-tight leading-none mb-2">
+                                {app.jobTitle || app.role || "Job Role"}
+                              </p>
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] text-indigo-500 font-black uppercase tracking-widest px-2 py-0.5 bg-indigo-50 rounded">System Verified</span>
+                              </div>
                             </div>
                           </div>
                         </td>
-                        <td className="px-8 py-6">
+                        <td className="px-10 py-8">
                           <StatusBadge status={app.status} />
                         </td>
-                        <td className="px-8 py-6">
-                          <div className="flex items-center gap-2 text-slate-500 font-bold text-sm">
-                            <Calendar size={14} className="text-slate-300"/>
-                            {new Date(app.appliedAt || app.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        <td className="px-10 py-8">
+                          <div className="flex flex-col gap-1">
+                            <p className="text-slate-700 font-black text-sm">
+                              {new Date(app.appliedAt || app.createdAt || Date.now()).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                            </p>
+                            <p className="text-[9px] text-slate-400 font-bold uppercase tracking-tighter">Application Date</p>
                           </div>
+                        </td>
+                        <td className="px-10 py-8 text-right">
+                           <ChevronRight size={20} className="text-slate-200 group-hover:text-indigo-400 group-hover:translate-x-1 transition-all" />
                         </td>
                       </tr>
                     ))}
@@ -112,12 +145,12 @@ export default function UserStatusPage() {
                 </table>
               </div>
             ) : (
-              <div className="p-20 text-center">
-                <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <FileText className="text-slate-200" size={40} />
+              <div className="p-32 text-center">
+                <div className="w-24 h-24 bg-slate-50 rounded-[2rem] flex items-center justify-center mx-auto mb-8 border border-slate-100">
+                  <FileText className="text-slate-200" size={48} />
                 </div>
-                <p className="text-slate-800 text-xl font-black">No Applications Yet</p>
-                <p className="text-slate-400 mt-2 font-medium">You haven't applied to any jobs. Explore careers to get started!</p>
+                <h3 className="text-2xl font-black text-slate-800 tracking-tight">No Journey Started</h3>
+                <p className="text-slate-400 mt-3 font-medium max-w-xs mx-auto">Explore the careers page and apply to your dream job to see them here.</p>
               </div>
             )}
           </div>
@@ -127,29 +160,35 @@ export default function UserStatusPage() {
   );
 }
 
-// UI Helper components (StatCard and StatusBadge) remains same as before...
+// Fixed StatCard Component
 function StatCard({ label, value, color, bgColor, icon }) {
   return (
-    <div className={`${bgColor} rounded-[24px] p-6 transition-all hover:scale-[1.02] border border-white/50 shadow-sm relative overflow-hidden group`}>
-      <div className={`absolute -right-2 -bottom-2 opacity-10 group-hover:scale-125 transition-transform ${color}`}>
+    <div className={`${bgColor} rounded-[32px] p-8 transition-all hover:-translate-y-1 border border-white/50 shadow-lg shadow-slate-200/50 relative overflow-hidden group`}>
+      {/* Background Icon - Removed React.cloneElement */}
+      <div className={`absolute -right-4 -bottom-4 opacity-5 group-hover:scale-150 group-hover:opacity-10 transition-all duration-700 ${color} rotate-12`}>
+        {icon} 
+      </div>
+      
+      <div className={`w-12 h-12 rounded-2xl bg-white flex items-center justify-center mb-6 shadow-sm ${color}`}>
         {icon}
       </div>
-      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{label}</p>
-      <p className={`text-4xl font-black ${color}`}>{value}</p>
+      <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1">{label}</p>
+      <p className={`text-5xl font-black tracking-tighter ${color}`}>{value.toString().padStart(2, '0')}</p>
     </div>
   );
 }
-
+// Fixed StatusBadge Component
 function StatusBadge({ status = "" }) {
   const normalized = status?.toLowerCase() || "pending";
   const styles = {
-    approved: "bg-emerald-100 text-emerald-700 border-emerald-200",
-    rejected: "bg-rose-100 text-rose-700 border-rose-200",
-    pending: "bg-amber-100 text-amber-700 border-amber-200"
+    approved: "bg-emerald-50 text-emerald-600 border-emerald-100",
+    rejected: "bg-rose-50 text-rose-600 border-rose-100",
+    pending: "bg-amber-50 text-amber-600 border-amber-100"
   };
 
   return (
-    <span className={`px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-full border shadow-sm ${styles[normalized] || styles.pending}`}>
+    <span className={`px-5 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl border-2 shadow-sm inline-flex items-center gap-2 ${styles[normalized] || styles.pending}`}>
+      <div className={`w-1.5 h-1.5 rounded-full ${normalized === 'approved' ? 'bg-emerald-500' : normalized === 'rejected' ? 'bg-rose-500' : 'bg-amber-500'}`}></div>
       {normalized}
     </span>
   );

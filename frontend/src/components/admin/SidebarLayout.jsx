@@ -19,6 +19,8 @@ export default function SidebarLayout({ children }) {
     { name: "Dropdown Manager", href: "/admin/dropdownManager" },
     { name: "Mail-manager", href: "/admin/mail-manager" },
     { name: "Excel-candidates", href: "/admin/excel-candidates" },
+    { name: "Recruiter Manager", href: "/admin/recruiters" },
+    { name: "Service Providers", href: "/admin/serviceproviders" },
    
   ];
 

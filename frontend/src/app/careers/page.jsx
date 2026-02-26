@@ -2,15 +2,15 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useSession } from "next-auth/react"; // ✅ Session માટે
-import { useRouter } from "next/navigation"; // ✅ Redirect માટે
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { 
   MapPin, Coffee, Laptop, Heart, 
-  ArrowRight, Zap, Rocket, Loader2, Search, Briefcase, Clock, X, Building2, Globe, Users
-} from 'lucide-react';
+  ArrowRight, Zap, Rocket, Loader2, Search, Briefcase, Clock, X, Building2, Globe, Users, Wallet
+} from 'lucide-react'; // ✅ 'lucide-center' ને બદલે 'lucide-react' કરી દીધું છે
 
 const CareersPage = () => {
-  const { data: session } = useSession(); // ✅ યુઝર લોગિન છે કે નહીં તે ચેક કરવા
+  const { data: session } = useSession();
   const router = useRouter();
   
   const [searchTerm, setSearchTerm] = useState('');
@@ -23,12 +23,13 @@ const CareersPage = () => {
   const [companyDetails, setCompanyDetails] = useState(null);
   const [loadingCompany, setLoadingCompany] = useState(false);
 
-  // ૧. બધી જોબ્સ ફેચ કરવા માટે
+  // ૧. જોબ્સ ફેચ કરવા માટે
   const fetchJobs = async () => {
     try {
       const res = await fetch('/api/jobs', { cache: 'no-store' });
       const data = await res.json();
-      const activeJobs = Array.isArray(data) ? data.filter(j => j.status === 'active' || j.published === true) : [];
+      const jobList = data.data || data; 
+      const activeJobs = Array.isArray(jobList) ? jobList : [];
       setJobs(activeJobs);
     } catch (error) {
       console.error("Error fetching jobs:", error);
@@ -39,55 +40,72 @@ const CareersPage = () => {
 
   // ૨. કંપની પ્રોફાઇલ ફેચ કરવા માટે
   const fetchCompanyProfile = async (job) => {
+    const targetId = job.recruiterId || job.companyId; 
+    
+    if (!targetId) {
+      setCompanyDetails(null);
+      return;
+    }
+
     setLoadingCompany(true);
     try {
-      const targetId = job.recruiterId || "TEMP_RECRUITER_ID"; 
-      const res = await fetch(`/api/recruiter/${targetId}`);
+      const res = await fetch(`/api/recruiter/register?action=get-profile&id=${targetId}`);
       const result = await res.json();
-      if (result.ok) {
+      
+      if (res.ok && result.data) {
         setCompanyDetails(result.data);
+      } else {
+        setCompanyDetails(null);
       }
     } catch (error) {
-      console.error("Error:", error);
+      console.error("Error fetching company details:", error);
+      setCompanyDetails(null);
     } finally {
       setLoadingCompany(false);
     }
   };
 
-  // ✅ ૩. Apply Logic (Login Check સાથે)
   const handleApply = async () => {
-    // પહેલા ચેક કરો કે યુઝર લોગિન છે કે નહીં
     if (!session) {
       alert("⚠️ તમારે જોબ એપ્લાય કરવા માટે પહેલા લોગિન કરવું પડશે!");
-      router.push("/login"); // લોગિન પેજ પર મોકલી દો
+      router.push("/login");
       return;
     }
+
+    // Optional: Add a check to ensure a job is actually selected
+    if (!selectedJob) return;
 
     try {
       const res = await fetch('/api/applications', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          // Make sure these keys match exactly what your API expects
           jobId: selectedJob._id,
-          recruiterId: selectedJob.recruiterId,
+          recruiterId: selectedJob.recruiterId || selectedJob.userId, 
           role: selectedJob.title,
         })
       });
       
       const data = await res.json();
-      
+
       if (res.ok) {
         alert("🚀 Application Sent Successfully!");
-        setSelectedJob(null); // ડ્રોઅર બંધ કરી દો
+        setSelectedJob(null); // Close the side drawer
       } else {
+        // This will show the "Profile Incomplete" message from your API
         alert(data.error || "તમારી પ્રોફાઇલ અધૂરી છે!");
+        
+        // Next Step: If profile is incomplete, redirect them to profile page
+        if (data.error?.includes("પ્રોફાઇલ અધૂરી")) {
+          router.push("/candidate/profile"); 
+        }
       }
     } catch (error) {
       console.error("Error applying:", error);
-      alert("Something went wrong!");
+      alert("Something went wrong! Please try again.");
     }
   };
-  
   useEffect(() => {
     fetchJobs();
   }, []);
@@ -95,6 +113,8 @@ const CareersPage = () => {
   useEffect(() => {
     if (selectedJob) {
       fetchCompanyProfile(selectedJob);
+    } else {
+      setCompanyDetails(null);
     }
   }, [selectedJob]);
 
@@ -164,14 +184,15 @@ const CareersPage = () => {
                 filteredJobs.map((job) => (
                   <motion.div key={job._id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={() => setSelectedJob(job)}>
                     <div className="group bg-white p-8 md:p-10 rounded-[3rem] border border-slate-100 hover:border-indigo-600 hover:shadow-xl transition-all cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-8">
-                      <div>
+                      <div className="flex-1">
                         <div className="flex items-center gap-3 mb-4">
                           <span className="px-3 py-1 bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase rounded-lg">{job.category || job.jobCategory}</span>
                           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest"><Clock size={12} className="inline mr-1"/> {job.jobType}</span>
                         </div>
                         <h3 className="text-2xl md:text-3xl font-black text-slate-900 group-hover:text-indigo-600 transition-colors">{job.title}</h3>
-                        <div className="flex items-center gap-4 text-slate-500 mt-4 text-sm font-bold uppercase">
+                        <div className="flex flex-wrap items-center gap-6 text-slate-500 mt-4 text-sm font-bold uppercase">
                           <span className="flex items-center gap-1.5"><MapPin size={16} className="text-indigo-500" /> {job.location}</span>
+                          {job.salaryRange && <span className="flex items-center gap-1.5"><Briefcase size={16} className="text-indigo-500" /> {job.salaryRange}</span>}
                         </div>
                       </div>
                       <div className="inline-flex items-center gap-3 bg-slate-950 text-white px-10 py-5 rounded-[1.5rem] font-black group-hover:bg-indigo-600 transition-all">
@@ -199,9 +220,9 @@ const CareersPage = () => {
                 <div className="flex items-center gap-3">
                    <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white"><Building2 size={24} /></div>
                    <div>
-                    <h2 className="font-black text-slate-900 leading-none">Company Profile</h2>
+                    <h2 className="font-black text-slate-900 leading-none">Job Details</h2>
                     <p className="text-[10px] text-slate-400 font-black uppercase mt-1">
-                      {loadingCompany ? "Loading..." : (companyDetails?.name || "Verified Partner")}
+                      {loadingCompany ? "Loading..." : (companyDetails?.companyName || "Verified Partner")}
                     </p>
                    </div>
                 </div>
@@ -210,31 +231,104 @@ const CareersPage = () => {
 
               <div className="p-8 md:p-12 space-y-12">
                 <div>
-                   <span className="px-4 py-1.5 bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase rounded-full">{selectedJob.jobType}</span>
-                   <h1 className="text-4xl font-black text-slate-900 mt-4 mb-6 leading-tight">{selectedJob.title}</h1>
+                   <div className="flex gap-2 mb-4">
+                     <span className="px-4 py-1.5 bg-indigo-50 text-indigo-600 text-[10px] font-black uppercase rounded-full">{selectedJob.jobType}</span>
+                     {selectedJob.experienceLevel && <span className="px-4 py-1.5 bg-emerald-50 text-emerald-600 text-[10px] font-black uppercase rounded-full">{selectedJob.experienceLevel}</span>}
+                   </div>
+                   <h1 className="text-4xl font-black text-slate-900 leading-tight mb-6">{selectedJob.title}</h1>
+                   
+                   <div className="flex flex-wrap gap-6 border-y border-slate-100 py-6">
+                      <div className="flex items-center gap-2">
+                        <MapPin size={18} className="text-indigo-500"/>
+                        <span className="text-sm font-black text-slate-600 uppercase">{selectedJob.location}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Briefcase size={18} className="text-indigo-500"/>
+                        <span className="text-sm font-black text-slate-600 uppercase">{selectedJob.category}</span>
+                      </div>
+                      {selectedJob.salaryRange && (
+                        <div className="flex items-center gap-2">
+                          <Wallet size={18} className="text-indigo-500" />
+                          <span className="text-sm font-black text-slate-600 uppercase">{selectedJob.salaryRange}</span>
+                        </div>
+                      )}
+                   </div>
                 </div>
 
-                <div className="bg-indigo-50/50 p-8 rounded-[3rem] border border-indigo-100/50 space-y-4">
-                   <h4 className="text-xl font-black text-slate-900">About Company</h4>
-                   {loadingCompany ? <Loader2 className="animate-spin text-indigo-600"/> : (
-                     <>
-                      <p className="text-slate-600 font-medium">{companyDetails?.description || "Company bio goes here..."}</p>
-                      <div className="flex gap-4 pt-4">
-                        {companyDetails?.website && <a href={companyDetails.website} target="_blank" className="text-indigo-600 font-black text-xs flex items-center gap-1 hover:underline"><Globe size={14}/> Website</a>}
-                        {companyDetails?.companySize && <span className="text-slate-500 font-black text-xs flex items-center gap-1"><Users size={14}/> {companyDetails.companySize} Employees</span>}
+                {/* ✅ Company Profile Card */}
+                <div className="bg-slate-50 p-7 md:p-9 rounded-[2.5rem] border border-slate-200/60 space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-lg font-black text-slate-900 uppercase tracking-tighter">Company Profile</h4>
+                    {!loadingCompany && companyDetails?.website && (
+                      <a href={companyDetails.website} target="_blank" className="p-2 bg-white rounded-xl shadow-sm border border-slate-100 text-indigo-600 hover:scale-110 transition-transform">
+                        <Globe size={18} />
+                      </a>
+                    )}
+                  </div>
+
+                  {loadingCompany ? (
+                    <div className="flex items-center gap-3 text-indigo-600 font-bold py-4">
+                      <Loader2 className="animate-spin" size={20} />
+                      <span className="text-xs uppercase tracking-widest">Loading Profile...</span>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      <div>
+                        <h3 className="text-2xl font-black text-indigo-600 leading-tight">
+                          {companyDetails?.companyName || "Corporate Partner"}
+                        </h3>
+                        <div className="inline-block mt-1 px-2 py-0.5 bg-indigo-100 text-indigo-700 text-[9px] font-black uppercase rounded">
+                          {companyDetails?.designation || companyDetails?.industry || "Tech & Innovation"}
+                        </div>
                       </div>
-                     </>
-                   )}
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-white/60 p-4 rounded-2xl border border-white shadow-sm">
+                          <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Location</p>
+                          <div className="flex items-center gap-1.5 text-slate-700 font-bold text-xs">
+                            <MapPin size={12} className="text-indigo-500" />
+                            {companyDetails?.location || "Remote / Pan India"}
+                          </div>
+                        </div>
+                        <div className="bg-white/60 p-4 rounded-2xl border border-white shadow-sm">
+                          <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Recruiter</p>
+                          <div className="flex items-center gap-1.5 text-slate-700 font-bold text-xs">
+                            <Users size={12} className="text-indigo-500" />
+                            {companyDetails?.fullName || "HR Team"}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 pt-2 border-t border-slate-200/50">
+                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">About the Team</p>
+                        <p className="text-slate-600 font-medium leading-relaxed text-sm">
+                          {companyDetails?.description || "A forward-thinking organization focused on delivering high-impact solutions and building a culture of excellence."}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-4">
-                   <h4 className="text-xl font-black text-slate-900">The Role</h4>
+                   <h4 className="text-xl font-black text-slate-900 uppercase tracking-tight">The Role</h4>
                    <div className="text-slate-600 leading-relaxed font-medium whitespace-pre-line bg-slate-50 p-6 rounded-2xl border border-slate-100">
                      {selectedJob.description}
                    </div>
                 </div>
 
-                {/* ✅ Apply Button Fix - Session Check સાથે */}
+                {selectedJob.skills && selectedJob.skills.length > 0 && (
+                  <div className="space-y-4">
+                    <h4 className="text-xl font-black text-slate-900 uppercase tracking-tight">Required Skills</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedJob.skills.map((skill, index) => (
+                        <span key={index} className="px-4 py-2 bg-white border border-slate-200 text-slate-700 text-xs font-black rounded-xl uppercase shadow-sm">
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div className="pt-8 border-t border-slate-100 sticky bottom-0 bg-white pb-4">
                    <button 
                      onClick={handleApply} 

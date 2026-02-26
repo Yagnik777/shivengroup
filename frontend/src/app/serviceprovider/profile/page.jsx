@@ -1,9 +1,11 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react'; 
 import Sidebar from '@/components/Serviceprovidersidbar';
-import { BadgeCheck, MapPin, Mail, Phone, Edit3, Save, Loader2, Briefcase, Star } from 'lucide-react';
+import { BadgeCheck, MapPin, Mail, Phone, Edit3, Save, Loader2, Briefcase, Star, MessageCircle } from 'lucide-react';
 
 export default function ProfilePage() {
+  const { data: session } = useSession(); 
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -16,17 +18,31 @@ export default function ProfilePage() {
     location: "",
     email: "",
     mobile: "",
+    whatsappNumber: "", 
     providerName: "",
     status: "pending"
   });
 
   useEffect(() => {
     async function fetchProfile() {
+      if (!session?.user?.email) return; 
+
       try {
-        const response = await fetch('/api/serviceprovider/register'); 
+        const response = await fetch(`/api/admin/serviceproviders?email=${session.user.email}`);
+        
+        if (!response.ok) throw new Error("Network response was not ok");
+        
         const data = await response.json();
-        if (data.success && data.user) {
-          setProfile(data.user);
+        
+        if (data.providers) {
+          const currentProfile = data.providers.find(p => p.email === session.user.email);
+          if (currentProfile) {
+            // અહીં ખાતરી કરી કે જો ડેટાબેઝમાં whatsappNumber ન હોય તો ખાલી સ્ટ્રિંગ સેટ થાય
+            setProfile({
+              ...currentProfile,
+              whatsappNumber: currentProfile.whatsappNumber || ""
+            });
+          }
         }
       } catch (error) {
         console.error("Failed to fetch profile", error);
@@ -35,7 +51,7 @@ export default function ProfilePage() {
       }
     }
     fetchProfile();
-  }, []);
+  }, [session]);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -44,19 +60,25 @@ export default function ProfilePage() {
       const response = await fetch('/api/serviceprovider/register', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(profile),
+        body: JSON.stringify(profile), 
       });
 
       const data = await response.json();
 
       if (response.ok && data.success) {
-        setProfile(data.user);
+        // API માંથી આવેલો નવો ડેટા (user) સેટ કરવો
+        setProfile(prev => ({
+          ...prev,
+          ...data.user,
+          whatsappNumber: data.user.whatsappNumber || ""
+        })); 
         setIsEditing(false);
         setSaveStatus("Saved!");
       } else {
         setSaveStatus(data.error || "Error!");
       }
     } catch (error) {
+      console.error("Save error:", error);
       setSaveStatus("Failed!");
     } finally {
       setIsSaving(false);
@@ -71,7 +93,10 @@ export default function ProfilePage() {
 
   if (isLoading) return (
     <div className="h-screen w-full flex items-center justify-center bg-[#f8fafc]">
-      <Loader2 className="animate-spin text-indigo-600" size={40} />
+      <div className="flex flex-col items-center gap-4">
+        <Loader2 className="animate-spin text-indigo-600" size={40} />
+        <p className="text-slate-500 font-bold animate-pulse text-sm">Loading Profile...</p>
+      </div>
     </div>
   );
 
@@ -166,9 +191,11 @@ export default function ProfilePage() {
                  <Phone size={18} className="text-slate-300" />
               </div>
               <div className="space-y-5">
-                {/* 💡 Email ફિલ્ડમાં readOnly={true} આપ્યું છે જેથી તે એડિટ ન થાય */}
                 <EditableField label="Email Address" icon={<Mail size={18}/>} name="email" value={profile.email} isEditing={isEditing} onChange={handleChange} readOnly={true} />
                 <EditableField label="Mobile Number" icon={<Phone size={18}/>} name="mobile" value={profile.mobile} isEditing={isEditing} onChange={handleChange} />
+                
+                {/* WhatsApp Number Field */}
+                <EditableField label="WhatsApp Number" icon={<MessageCircle size={18}/>} name="whatsappNumber" value={profile.whatsappNumber} isEditing={isEditing} onChange={handleChange} />
               </div>
             </div>
           </div>
@@ -192,6 +219,7 @@ function EditableField({ label, icon, name, value, isEditing, onChange, readOnly
             value={value || ""} 
             onChange={onChange} 
             className="w-full bg-slate-50 border-b-2 border-indigo-100 focus:border-indigo-500 outline-none text-sm font-bold text-slate-700 py-1 px-1 transition-all rounded-t-lg" 
+            placeholder={`Enter ${label}`}
           />
         ) : (
           <p className={`text-sm font-bold truncate ${readOnly && isEditing ? "text-slate-400 italic" : "text-slate-700"}`}>

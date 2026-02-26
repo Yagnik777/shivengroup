@@ -109,7 +109,6 @@ export async function POST(req) {
   try {
     await connectMongo();
     
-    // સેસન ચેક કરો
     const session = await getServerSession(authOptions);
     if (!session) {
       return NextResponse.json({ error: "Please login first" }, { status: 401 });
@@ -118,7 +117,6 @@ export async function POST(req) {
     const body = await req.json();
     const { jobId, recruiterId, role } = body;
 
-    // Candidate મોડલમાંથી લોગિન યુઝરનો ફૂલ ડેટા શોધો
     const userProfile = await Candidate.findOne({ userId: session.user.id });
 
     if (!userProfile) {
@@ -127,19 +125,41 @@ export async function POST(req) {
       }, { status: 400 });
     }
 
-    // Application સેવ કરો
+    // Creating Application with correct mapping
     const newApp = await Application.create({
       jobId,
       recruiterId,
-      name: userProfile.fullName, 
+      name: userProfile.fullName,       // Maps Candidate.fullName -> Application.name
       email: userProfile.email,   
       role: role,                 
-      resumeUrl: userProfile.resume, 
+      resumeUrl: userProfile.resume,    // Maps Candidate.resume -> Application.resumeUrl
       mobile: userProfile.mobile,   
       city: userProfile.city,       
-      profession: userProfile.profession, // વધારાની વિગત
-      experience: userProfile.experience, // વધારાની વિગત
-      status: "Pending", // બાય ડિફોલ્ટ પેન્ડિંગ
+      state: userProfile.state,
+      profession: userProfile.profession,
+      
+      // Education
+      graduationUniversity: userProfile.graduationUniversity,
+      graduationSpecialization: userProfile.graduationSpecialization,
+      graduationPercentage: userProfile.graduationPercentage,
+      classXIIPercentage: userProfile.classXIIPercentage,
+      classXPercentage: userProfile.classXPercentage,
+      
+      // Work Experience
+      presentEmploymentStatus: userProfile.presentEmploymentStatus,
+      currentCompanyName: userProfile.currentCompanyName,
+      jobDepartment: userProfile.jobDepartment,
+      jobIndustry: userProfile.jobIndustry,
+      jobDescription: userProfile.jobDescription,
+      jobFromDate: userProfile.jobFromDate,
+      jobToDate: userProfile.jobToDate,
+      
+      // Skills & Socials
+      skills: userProfile.skills,
+      github: userProfile.github,
+      portfolio: userProfile.portfolio,
+
+      status: "Pending", 
       appliedAt: new Date()
     });
 
@@ -151,13 +171,25 @@ export async function POST(req) {
 }
 
 // 2. GET: રિક્રુટર માટે બધા જ કેન્ડિડેટ્સનું લિસ્ટ મેળવવા
+// 2. GET: ફક્ત જે-તે રિક્રુટર માટેના જ કેન્ડિડેટ્સનું લિસ્ટ મેળવવા
 export async function GET() {
   try {
     await connectMongo();
-    // બધા જ કેન્ડિડેટ્સ લેટેસ્ટ તારીખ મુજબ મેળવો
-    const apps = await Application.find().sort({ appliedAt: -1 });
+
+    // ચેક કરો કે રિક્રુટર લોગિન છે કે નહીં
+    const session = await getServerSession(authOptions);
+    
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // ફક્ત એજ એપ્લિકેશન શોધો જેમાં recruiterId લોગિન થયેલ યુઝરની ID સાથે મેચ થતી હોય
+    // ધારો કે તમારી સિસ્ટમમાં session.user.id એ રિક્રુટરની ID છે
+    const apps = await Application.find({ recruiterId: session.user.id }).sort({ appliedAt: -1 });
+
     return NextResponse.json({ ok: true, data: apps });
   } catch (err) {
+    console.error("Fetch Error:", err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
@@ -181,6 +213,24 @@ export async function PATCH(req) {
     return NextResponse.json({ ok: true, data: updatedApp });
   } catch (err) {
     console.error("Update Error:", err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}
+// app/api/applications/route.js
+
+export async function DELETE(req) {
+  try {
+    await connectMongo();
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get("id");
+
+    if (!id) {
+      return NextResponse.json({ error: "Application ID is required" }, { status: 400 });
+    }
+
+    await Application.findByIdAndDelete(id);
+    return NextResponse.json({ ok: true, message: "Deleted successfully" });
+  } catch (err) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

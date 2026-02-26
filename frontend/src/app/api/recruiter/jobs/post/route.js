@@ -1,13 +1,16 @@
 import { NextResponse } from "next/server";
 import connectMongo from "@/lib/mongodb";
 import Job from "@/models/Job";
-import Company from "@/models/Company";
+import Company from "@/models/Recruiter";
 
 // ✅ GET: Fetch all jobs for a recruiter
 export async function GET(req) {
   try {
     await connectMongo();
-    const recruiterId = "TEMP_RECRUITER_ID"; // Replace with session logic
+    // પ્રોફાઇલ શોધીને તેની ID લેવી
+    const company = await Company.findOne().sort({ createdAt: -1 });
+    const recruiterId = company ? company._id.toString() : "TEMP_RECRUITER_ID";
+    
     const jobs = await Job.find({ recruiterId }).sort({ createdAt: -1 });
     return NextResponse.json({ success: true, jobs: jobs || [] });
   } catch (error) {
@@ -20,18 +23,26 @@ export async function POST(req) {
   try {
     await connectMongo();
     const body = await req.json();
-    const recruiterId = "TEMP_RECRUITER_ID";
 
-    const company = await Company.findOne({ recruiterId });
-    if (!company) return NextResponse.json({ error: "Company profile not found" }, { status: 400 });
+    // તમારી Register API મુજબ પ્રોફાઇલ ચેક કરવી (Latest profile)
+    const company = await Company.findOne().sort({ createdAt: -1 });
 
-    const skillsArray = body.requirements ? body.requirements.split(",").map(s => s.trim()) : [];
+    if (!company) {
+      return NextResponse.json(
+        { error: "Company profile not found" },
+        { status: 400 }
+      );
+    }
+
+    const skillsArray = body.requirements 
+      ? body.requirements.split(",").map(s => s.trim()) 
+      : [];
 
     const newJob = await Job.create({
       ...body,
       skills: skillsArray,
       deadline: new Date(body.deadline),
-      recruiterId,
+      recruiterId: company._id.toString(), // Database ID નો ઉપયોગ કર્યો
       companyId: company._id,
     });
 
@@ -74,3 +85,5 @@ export async function DELETE(req) {
     return NextResponse.json({ error: "Delete failed" }, { status: 500 });
   }
 }
+
+export const dynamic = "force-dynamic";
