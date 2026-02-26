@@ -3,40 +3,67 @@ import React, { useState, useEffect } from 'react';
 import { Search, MapPin, ChevronRight, Bookmark, Sparkles, Bell, Loader2 } from 'lucide-react';
 import UserSidebar from '@/components/UserSidebar';
 import Link from 'next/link';
+import { useSession } from "next-auth/react";
 
 export default function UserDashboard() {
+  const { data: session } = useSession();
   const [jobs, setJobs] = useState([]);
+  const [stats, setStats] = useState({ applied: 0, interviews: 0, saved: 0 });
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  // Sidebar ની હાલત જાણવા માટે (Default false એટલે કે open)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   useEffect(() => {
-    const fetchRecentJobs = async () => {
+    const fetchDashboardData = async () => {
       try {
-        const res = await fetch('/api/jobs', { cache: 'no-store' });
-        const data = await res.json();
-        setJobs(Array.isArray(data) ? data.slice(0, 4) : []);
+        // 1. નોકરીઓ ફેચ કરો
+        const jobsRes = await fetch('/api/jobs', { cache: 'no-store' });
+        const jobsData = await jobsRes.json();
+        setJobs(Array.isArray(jobsData) ? jobsData.slice(0, 4) : []);
+
+        // 2. એપ્લાય કરેલી નોકરીઓ ફેચ કરો (Error Fix: Array check ઉમેર્યું છે)
+        const applicationsRes = await fetch('/api/user/applications'); 
+        if (applicationsRes.ok) {
+          const appData = await applicationsRes.json();
+          const safeAppData = Array.isArray(appData) ? appData : [];
+          
+          const appliedCount = safeAppData.length;
+          const interviewCount = safeAppData.filter(app => 
+            app.status === 'interview' || app.status === 'scheduled'
+          ).length;
+          
+          setStats(prev => ({
+            ...prev,
+            applied: appliedCount,
+            interviews: interviewCount
+          }));
+        }
+
+        // 3. સેવ કરેલી નોકરીઓ ફેચ કરો
+        const savedRes = await fetch('/api/user/saved-jobs');
+        if (savedRes.ok) {
+          const savedData = await savedRes.json();
+          const safeSavedData = Array.isArray(savedData) ? savedData : [];
+          setStats(prev => ({ ...prev, saved: safeSavedData.length }));
+        }
+
       } catch (error) {
-        console.error("Error fetching jobs:", error);
+        console.error("Error fetching dashboard data:", error);
       } finally {
         setLoading(false);
       }
     };
-    fetchRecentJobs();
+
+    fetchDashboardData();
   }, []);
 
   return (
     <div className="flex h-screen bg-[#FDFEFF] overflow-hidden">
       
-      {/* 1. સાઇડબાર - અહીં આપણે કોલેપ્સ સ્ટેટ પાસ કરીએ છીએ જો જરૂર હોય */}
+      {/* 1. સાઇડબાર */}
       <UserSidebar onCollapseChange={setIsSidebarCollapsed} />
 
       {/* 2. મેઈન કન્ટેન્ટ એરિયા */}
-      {/* - lg:ml-72: જ્યારે સાઇડબાર ખુલ્લો હોય 
-          - lg:ml-24: જ્યારે સાઇડબાર કોલેપ્સ હોય 
-          - pt-20: મોબાઈલ હેડર માટે જગ્યા
-      */}
       <main className={`flex-1 overflow-y-auto transition-all duration-300 pt-20 lg:pt-0 
         ${isSidebarCollapsed ? "lg:ml-24" : "lg:ml-72"}`}>
         
@@ -46,7 +73,7 @@ export default function UserDashboard() {
           <header className="flex justify-between items-center mb-10">
             <div>
               <h1 className="text-2xl md:text-4xl font-black text-slate-900 tracking-tight leading-tight">
-                Hello, <span className="text-indigo-600">Rahul</span> 👋
+                Hello, <span className="text-indigo-600">{session?.user?.name?.split(' ')[0] || "User"}</span> 👋
               </h1>
               <p className="text-slate-500 font-medium text-sm mt-1">Ready to find your next big opportunity?</p>
             </div>
@@ -83,11 +110,11 @@ export default function UserDashboard() {
           {/* STATS GRID */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-12">
             {[
-              { label: "Applied Jobs", value: "24", color: "text-indigo-600", bg: "bg-indigo-50" },
-              { label: "Interviews", value: "03", color: "text-emerald-600", bg: "bg-emerald-50" },
-              { label: "Saved Jobs", value: "12", color: "text-amber-600", bg: "bg-amber-50" },
+              { label: "Applied Jobs", value: stats.applied.toString().padStart(2, '0'), color: "text-indigo-600", bg: "bg-indigo-50", href: "/user/status" },
+              { label: "Interviews", value: stats.interviews.toString().padStart(2, '0'), color: "text-emerald-600", bg: "bg-emerald-50", href: "/user/status" },
+              { label: "Saved Jobs", value: stats.saved.toString().padStart(2, '0'), color: "text-amber-600", bg: "bg-amber-50", href: "/user/careers" },
             ].map((stat, i) => (
-              <div key={i} className="bg-white p-7 rounded-[32px] border border-slate-100 flex items-center justify-between group hover:border-indigo-300 transition-all shadow-sm hover:shadow-md cursor-pointer">
+              <Link href={stat.href} key={i} className="bg-white p-7 rounded-[32px] border border-slate-100 flex items-center justify-between group hover:border-indigo-300 transition-all shadow-sm hover:shadow-md cursor-pointer">
                 <div>
                   <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-1">{stat.label}</p>
                   <p className={`text-4xl font-black ${stat.color}`}>{stat.value}</p>
@@ -95,28 +122,26 @@ export default function UserDashboard() {
                 <div className={`${stat.bg} p-4 rounded-2xl group-hover:bg-indigo-600 group-hover:text-white transition-all`}>
                   <ChevronRight size={24} />
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
 
           {/* MAIN GRID */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-            
-            {/* Left side: Job Recommendations */}
             <div className="lg:col-span-2 space-y-6">
               <div className="flex justify-between items-center px-2">
                 <h3 className="text-2xl font-black text-slate-900 tracking-tight">Recommended for you</h3>
-                <Link href="/careers" className="text-indigo-600 font-bold text-sm hover:underline">View all</Link>
+                <Link href="/user/careers" className="text-indigo-600 font-bold text-sm hover:underline">View all</Link>
               </div>
               
               {loading ? (
                 <div className="flex justify-center py-20"><Loader2 className="animate-spin text-indigo-600" size={40}/></div>
               ) : jobs.length > 0 ? (
                 jobs.map((job) => (
-                  <Link href={`/careers/${job._id}`} key={job._id} className="block group">
+                  <Link href={`/user/careers/${job._id}`} key={job._id} className="block group">
                     <div className="bg-white p-7 rounded-[35px] border border-slate-100 hover:shadow-2xl hover:border-indigo-100 transition-all flex flex-col sm:flex-row gap-6 relative overflow-hidden">
                       <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center font-black text-2xl text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-all shrink-0">
-                        {job.title.charAt(0)}
+                        {job.title?.charAt(0) || "J"}
                       </div>
                       <div className="flex-1">
                         <div className="flex justify-between items-start">
@@ -159,11 +184,10 @@ export default function UserDashboard() {
                   <p className="text-slate-400 text-sm mb-10 leading-relaxed font-medium">
                     તમારા રેઝ્યૂમેને સ્કેન કરો અને જોબ ડિસ્ક્રિપ્શન સાથે મેચ ચેક કરો.
                   </p>
-                  <button className="w-full bg-indigo-600 text-white py-5 rounded-2xl font-black text-sm shadow-xl hover:bg-indigo-500 transition-all active:scale-95">
+                  <Link href="/user/resume" className="block text-center w-full bg-indigo-600 text-white py-5 rounded-2xl font-black text-sm shadow-xl hover:bg-indigo-500 transition-all active:scale-95">
                     Start Scanning
-                  </button>
+                  </Link>
                 </div>
-                {/* Decorative BG Gradient */}
                 <div className="absolute -bottom-10 -right-10 w-56 h-56 bg-indigo-600/20 rounded-full blur-[80px] group-hover:bg-indigo-600/40 transition-all duration-700"></div>
               </div>
               
@@ -175,7 +199,6 @@ export default function UserDashboard() {
                 </p>
               </div>
             </div>
-
           </div>
         </div>
       </main>

@@ -1,3 +1,4 @@
+//src/app/api/auth/register/route.js
 export const dynamic = "force-dynamic";
 
 import connectMongo from "@/lib/mongodb";
@@ -37,6 +38,7 @@ export async function POST(req) {
         password: hashed,
         acceptedTerms: true,
         isVerified: false,
+        role: "candidate",
       });
 
       return Response.json({ message: "User registered. Please verify OTP!" });

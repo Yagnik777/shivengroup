@@ -217,7 +217,7 @@ export default function JobConnectPro() {
       </section>
 
       {/* --- Footer --- */}
-      <footer className="bg-white border-t border-slate-100 pt-20 pb-10">
+      {/* <footer className="bg-white border-t border-slate-100 pt-20 pb-10">
         <div className="max-w-7xl mx-auto px-4">
           <div className="grid md:grid-cols-4 gap-12 mb-16">
             <div className="col-span-1 md:col-span-2">
@@ -248,7 +248,7 @@ export default function JobConnectPro() {
             © 2026 JobConnect Pro Inc. Built with React & Tailwind.
           </div>
         </div>
-      </footer>
+      </footer> */}
     </div>
   );
 }

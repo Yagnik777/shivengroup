@@ -1,323 +1,571 @@
-// "use client";
-
-// import { ArrowRight, FileText, Sparkles, Wand2, Layers } from "lucide-react";
-
-// export default function ResumeLandingPage() {
-//   const features = [
-//     {
-//       title: "Create Your Resume",
-//       desc: "Step-by-step builder to make a professional resume.",
-//       icon: FileText,
-//       href: "/resume/resume-builder",
-//     },
-//     {
-//       title: "AI Resume Writer",
-//       desc: "Generate summaries and bullet points with AI.",
-//       icon: Sparkles,
-//       href: "/resume/ai-writer",
-//     },
-//     {
-//       title: "Cover Letter Generation",
-//       desc: "Generate professional cover letters tailored for each job.",
-//       icon: Wand2,
-//       href: "/cover-letter/builder",
-//     },
-//     {
-//       title: "Optimize With AI",
-//       desc: "Check ATS score & improve resume for jobs.",
-//       icon: Wand2,
-//       href: "/resume/ats-check",
-//     },
-//   ];
-
-//   const getIcon = (icon) => {
-//     const IconComp = icon;
-//     return <IconComp size={28} className="transition-transform duration-300 group-hover:scale-110" />;
-//   };
-
-//   return (
-//     <div className="w-full min-h-screen bg-gradient-to-b from-gray-50 to-white py-20">
-//       <div className="max-w-6xl mx-auto px-6 flex flex-col gap-16">
-
-//         {/* Hero Section */}
-//         <div className="text-center flex flex-col items-center gap-4">
-//           <h1 className="text-5xl md:text-6xl font-extrabold leading-tight text-gray-900">
-//             Build a Job-Winning Resume
-//           </h1>
-//           <p className="text-gray-600 text-lg md:text-xl max-w-2xl">
-//             Create, optimize, and tailor your resume with our AI-powered tools — all in one place.
-//           </p>
-//           <div className="mt-6">
-//             <a
-//               href="/resume/builder"
-//               className="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-lg font-semibold shadow-lg transition transform hover:-translate-y-1"
-//             >
-//               Start Building Your Resume <ArrowRight size={20} />
-//             </a>
-//           </div>
-//         </div>
-
-//         {/* Features Section */}
-//         <div className="grid gap-8 md:grid-cols-2">
-//           {features.map((f, idx) => (
-//             <a
-//               key={idx}
-//               href={f.href}
-//               className="group flex flex-col bg-white rounded-2xl shadow-lg p-6 hover:shadow-2xl border border-gray-200 transition transform hover:-translate-y-2 cursor-pointer"
-//             >
-//               <div className="flex items-center gap-4 mb-4">
-//                 <div className="p-4 rounded-xl bg-blue-100 text-blue-600">
-//                   {getIcon(f.icon)}
-//                 </div>
-//                 <h3 className="text-xl font-semibold">{f.title}</h3>
-//               </div>
-//               <p className="text-gray-600 flex-1">{f.desc}</p>
-//               <span className="mt-4 inline-flex items-center gap-2 text-blue-600 font-medium group-hover:underline">
-//                 Get Started <ArrowRight size={16} />
-//               </span>
-//             </a>
-//           ))}
-//         </div>
-
-       
-//       </div>
-//     </div>
-//   );
-// }
-
-
+//src/app/user/resume/page.jsx
 "use client";
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 
-import { useState } from "react";
-import { 
-  Plus, Trash, FileDown, UploadCloud, 
-  User, Briefcase, GraduationCap, Code, 
-  Award, FolderGit2, Globe2, Sparkles, 
-  CheckCircle2, LayoutTemplate
-} from "lucide-react";
-import ResumePreview from "@/components/ResumePreview";
-import UserSidebar from "@/components/UserSidebar";
+const ResumeBuilder = () => {
+  const router = useRouter();
 
-export default function ResumeBuilderPage() {
-  // States (Keeping your original state logic)
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [linkedin, setLinkedin] = useState("");
-  const [github, setGithub] = useState("");
-  const [summary, setSummary] = useState("");
-  const [experiences, setExperiences] = useState([{ title: "", company: "", duration: "", description: "" }]);
-  const [educations, setEducations] = useState([{ degree: "", university: "", year: "" }]);
-  const [skills, setSkills] = useState([""]);
-  const [certifications, setCertifications] = useState([""]);
-  const [projects, setProjects] = useState([{ name: "", link: "", description: "" }]);
-  const [languages, setLanguages] = useState([""]);
-  const [importing, setImporting] = useState(false);
-  const [exporting, setExporting] = useState(false);
-  const [template, setTemplate] = useState("template1");
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const templates = [
-    { id: "template1", name: "Classic", description: "Clean & Pro" },
-    { id: "template2", name: "Modern", description: "Sleek look" },
-    { id: "template3", name: "Creative", description: "Unique style" },
-    { id: "template4", name: "Minimal", description: "Simple" },
-  ];
+  const [declaration] = useState(
+  "I hereby declare that the information provided above is true and correct to the best of my knowledge and belief."
+  );
 
-  // Logic Handlers (Keeping your logic intact)
-  const handleExperienceChange = (index, field, value) => {
-    const newExps = [...experiences];
-    newExps[index][field] = value;
-    setExperiences(newExps);
+  const [personalInfo, setPersonalInfo] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    location: "",
+    summary: "",
+  });
+
+  const [edu10, setEdu10] = useState({ school: "", year: "", grade: "" });
+  const [edu12, setEdu12] = useState({ school: "", year: "", grade: "" });
+  const [eduDegree, setEduDegree] = useState({
+    college: "",
+    year: "",
+    grade: "",
+  });
+
+  const [projects, setProjects] = useState([
+    { id: Date.now(), name: "", frontend: "", backend: "", database: "" },
+  ]);
+
+  const [skills, setSkills] = useState({ tech: "", soft: "", lang: "" });
+
+  const [experiences, setExperiences] = useState([
+    { id: Date.now(), title: "", company: "", start: "", end: "", desc: "" },
+  ]);
+
+  const [certifications, setCertifications] = useState([
+  { id: Date.now(), name: "", org: "", date: "", credentialId: "" },
+]);
+
+
+  const inputStyle =
+    "input-focus w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-800 placeholder-slate-400 outline-none transition-all";
+
+  const subInputStyle =
+    "input-focus w-full px-4 py-2.5 rounded-lg border border-slate-200 bg-white text-slate-800 placeholder-slate-400 outline-none transition-all";
+
+  const addExperience = () => {
+    setExperiences((prev) => [
+      ...prev,
+      { id: Date.now(), title: "", company: "", start: "", end: "", desc: "" },
+    ]);
   };
-  const handleEducationChange = (index, field, value) => {
-    const newEdus = [...educations];
-    newEdus[index][field] = value;
-    setEducations(newEdus);
+
+  // Projects: unlimited now
+const addProject = () => {
+  setProjects((prev) => [
+    ...prev,
+    { id: Date.now(), name: "", frontend: "", backend: "", database: "" },
+  ]);
+};
+
+  const updateExperience = (id, field, value) => {
+    setExperiences((prev) =>
+      prev.map((exp) =>
+        exp.id === id ? { ...exp, [field]: value } : exp
+      )
+    );
   };
-  const handleSkillChange = (index, value) => {
-    const newSkills = [...skills];
-    newSkills[index] = value;
-    setSkills(newSkills);
+
+  const updateProject = (id, field, value) => {
+    setProjects((prev) =>
+      prev.map((proj) =>
+        proj.id === id ? { ...proj, [field]: value } : proj
+      )
+    );
   };
-  // ... other handlers (add them back here as per your original code)
+
+  const addCertification = () => {
+  setCertifications((prev) => [
+    ...prev,
+    { id: Date.now(), name: "", org: "", date: "", credentialId: "" },
+  ]);
+};
+
+const updateCertification = (id, field, value) => {
+  setCertifications((prev) =>
+    prev.map((cert) =>
+      cert.id === id ? { ...cert, [field]: value } : cert
+    )
+  );
+};
+
+const [languages, setLanguages] = useState({
+  list: [],      // Array to hold languages
+  current: ""    // Temp input for adding a new language
+});
+// Add language to list
+const addLanguage = () => {
+  if (languages.current.trim() !== "" && !languages.list.includes(languages.current.trim())) {
+    setLanguages(prev => ({
+      list: [...prev.list, prev.current.trim()],
+      current: ""
+    }));
+  }
+};
+
+// Remove a language
+const removeLanguage = (lang) => {
+  setLanguages(prev => ({
+    ...prev,
+    list: prev.list.filter(l => l !== lang)
+  }));
+};
+
+
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    const resumeData = {
+  personalInfo,
+  edu10,
+  edu12,
+  eduDegree,
+  projects,
+  skills,
+  experiences,
+  certifications,
+  declaration,
+  languages: languages.list    // ✅ ADD THIS LINE
+};
+
+
+    localStorage.setItem("resumeData", JSON.stringify(resumeData));
+
+    setTimeout(() => {
+      setIsLoading(false);
+      setShowSuccess(true);
+
+      setTimeout(() => {
+        router.push("/resume/resume-builder");
+      }, 800);
+    }, 1000);
+  };
 
   return (
-    <div className="flex min-h-screen bg-[#F8FAFC] p-4 md:p-8">
-      <UserSidebar />
-      <div className="max-w-[1600px] mx-auto">
-        
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-              <Sparkles className="text-indigo-600" /> Resume Builder
-            </h1>
-            <p className="text-slate-500 font-medium">Create a job-winning resume in minutes.</p>
+    <div
+      className="h-full w-full overflow-auto min-h-screen pb-20"
+      style={{
+        background: "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)",
+        fontFamily: "'DM Sans', sans-serif",
+      }}
+    >
+      <style>{`
+        .form-section { animation: fadeIn 0.4s ease-out forwards; opacity: 0; }
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .input-focus:focus {
+          box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+          border-color: #6366f1;
+        }
+        .btn-hover { transition: all 0.2s ease; }
+        .btn-hover:hover { transform: translateY(-1px); }
+        .section-card { transition: all 0.3s ease; }
+        .section-card:hover {
+          box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+      `}</style>
+
+      <div className="max-w-4xl mx-auto px-4 py-8">
+
+        <header className="text-center mb-10">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4"
+            style={{ background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)" }}>
+            <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor"
+              viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
           </div>
-          
-          <div className="flex items-center gap-3">
-             <label className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 rounded-xl font-bold text-sm text-slate-600 cursor-pointer hover:bg-slate-50 transition-all shadow-sm">
-                <UploadCloud size={18} className="text-indigo-600" />
-                {importing ? "Importing..." : "Import JSON/PDF"}
-                <input type="file" className="hidden" accept=".pdf,.docx" onChange={() => {}} />
-             </label>
-             <div className="h-8 w-[1px] bg-slate-200 mx-1 hidden md:block"></div>
-             <button 
-                onClick={() => {}} 
-                className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-black text-sm shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all flex items-center gap-2"
-             >
-                <CheckCircle2 size={18} /> Save Progress
-             </button>
-          </div>
-        </div>
+          <h1 className="text-3xl font-bold text-slate-800 mb-2">
+            Resume Builder
+          </h1>
+          <p className="text-slate-500">
+            Fill in your details and choose from 3 unique designs
+          </p>
+        </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
-          {/* Left: Form Builder */}
-          <div className="lg:col-span-7 space-y-6">
-            
-            {/* 1. Template Picker */}
-            <div className="bg-white p-6 rounded-[24px] border border-slate-100 shadow-sm">
-              <h2 className="text-sm font-black uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2">
-                <LayoutTemplate size={16} /> Select Template
-              </h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {templates.map((t) => (
-                  <button
-                    key={t.id}
-                    onClick={() => setTemplate(t.id)}
-                    className={`p-3 rounded-2xl border-2 transition-all text-left ${
-                      template === t.id 
-                      ? "border-indigo-600 bg-indigo-50/50 shadow-sm" 
-                      : "border-slate-50 bg-slate-50/50 hover:border-slate-200"
-                    }`}
-                  >
-                    <p className={`font-bold text-sm ${template === t.id ? "text-indigo-600" : "text-slate-700"}`}>{t.name}</p>
-                    <p className="text-[10px] text-slate-500 font-medium">{t.description}</p>
-                  </button>
-                ))}
+        <form onSubmit={handleSubmit} className="space-y-6">
+
+          {/* PERSONAL INFO */}
+           {/* 1. Personal Information */}
+          <section className="form-section section-card bg-white rounded-2xl p-6 shadow-sm border border-slate-100" style={{ animationDelay: '0.1s' }}>
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#eef2ff' }}>
+                <svg className="w-5 h-5" style={{ color: '#6366f1' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
               </div>
+              <h2 className="text-xl font-semibold text-slate-800">Personal Information</h2>
             </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <input type="text" required value={personalInfo.fullName} onChange={(e) => setPersonalInfo({...personalInfo, fullName: e.target.value})} className={inputStyle} placeholder="Full Name *" />
+              <input type="email" required value={personalInfo.email} onChange={(e) => setPersonalInfo({...personalInfo, email: e.target.value})} className={inputStyle} placeholder="Email Address *" />
+              <input type="tel" required value={personalInfo.phone} onChange={(e) => setPersonalInfo({...personalInfo, phone: e.target.value})} className={inputStyle} placeholder="Phone Number *" />
+              <input type="text" value={personalInfo.location} onChange={(e) => setPersonalInfo({...personalInfo, location: e.target.value})} className={inputStyle} placeholder="Location" />
+              <textarea rows="3" value={personalInfo.summary} onChange={(e) => setPersonalInfo({...personalInfo, summary: e.target.value})} className={inputStyle + " resize-none col-span-1 md:col-span-2"} placeholder="Professional Summary..."></textarea>
+            </div>
+          </section>
 
-            {/* 2. Personal Info */}
-            <div className="bg-white p-6 rounded-[24px] border border-slate-100 shadow-sm">
-              <h2 className="text-sm font-black uppercase tracking-widest text-slate-400 mb-6 flex items-center gap-2">
-                <User size={16} /> Personal Information
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-400 ml-1">FULL NAME</label>
-                  <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="John Doe" className="w-full p-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-indigo-500 text-sm font-bold" />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-slate-400 ml-1">EMAIL ADDRESS</label>
-                  <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="john@example.com" className="w-full p-3 bg-slate-50 border-none rounded-xl focus:ring-2 focus:ring-indigo-500 text-sm font-bold" />
-                </div>
-                <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Phone Number" className="p-3 bg-slate-50 border-none rounded-xl text-sm font-bold" />
-                <input type="text" value={linkedin} onChange={(e) => setLinkedin(e.target.value)} placeholder="LinkedIn URL" className="p-3 bg-slate-50 border-none rounded-xl text-sm font-bold" />
+          
+
+          {/* 2. Education Details */}
+          <section className="form-section section-card bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+            <h2 className="text-xl font-semibold mb-5 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center text-red-500 underline decoration-2 underline-offset-4">Ed</div>
+              Education Details
+            </h2>
+
+            {/* 10th */}
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="col-span-2 text-xs font-black text-slate-400 uppercase tracking-widest italic">
+                10th Standard
               </div>
-            </div>
-
-            {/* 3. Professional Summary */}
-            <div className="bg-white p-6 rounded-[24px] border border-slate-100 shadow-sm">
-              <h2 className="text-sm font-black uppercase tracking-widest text-slate-400 mb-4">Professional Summary</h2>
-              <textarea
-                value={summary}
-                onChange={(e) => setSummary(e.target.value)}
-                placeholder="Briefly describe your career goals and achievements..."
-                className="w-full p-4 bg-slate-50 border-none rounded-2xl focus:ring-2 focus:ring-indigo-500 text-sm font-medium min-h-[120px]"
+              <input
+                placeholder="School Name"
+                className={subInputStyle}
+                value={edu10.school}
+                onChange={(e) => setEdu10({ ...edu10, school: e.target.value })}
+              />
+              <input
+                placeholder="Year"
+                type="number"
+                className={subInputStyle}
+                value={edu10.year}
+                onChange={(e) => setEdu10({ ...edu10, year: e.target.value })}
+              />
+              <input
+                placeholder="Percentage"
+                className={subInputStyle + " col-span-2"}
+                value={edu10.grade}
+                onChange={(e) => setEdu10({ ...edu10, grade: e.target.value })}
               />
             </div>
 
-            {/* 4. Experience Section */}
-            <div className="bg-white p-6 rounded-[24px] border border-slate-100 shadow-sm">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-sm font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                  <Briefcase size={16} /> Work Experience
-                </h2>
-                <button onClick={() => setExperiences([...experiences, {title:"", company:"", duration:"", description:""}])} className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all">
-                  <Plus size={20} />
-                </button>
+            {/* 12th */}
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="col-span-2 text-xs font-black text-slate-400 uppercase tracking-widest italic">
+                12th Standard
               </div>
-              
-              <div className="space-y-6">
-                {experiences.map((exp, i) => (
-                  <div key={i} className="relative p-5 bg-slate-50/50 rounded-2xl border border-slate-100">
-                    <button className="absolute -top-2 -right-2 p-1.5 bg-white shadow-sm border border-slate-100 text-rose-500 rounded-full hover:bg-rose-50 transition-all">
-                      <Trash size={14} />
-                    </button>
-                    <div className="grid grid-cols-2 gap-4 mb-4">
-                      <input type="text" placeholder="Job Title" className="p-3 bg-white border border-slate-100 rounded-xl text-sm font-bold w-full" value={exp.title} onChange={(e) => handleExperienceChange(i, 'title', e.target.value)} />
-                      <input type="text" placeholder="Company" className="p-3 bg-white border border-slate-100 rounded-xl text-sm font-bold w-full" value={exp.company} onChange={(e) => handleExperienceChange(i, 'company', e.target.value)} />
-                    </div>
-                    <textarea placeholder="Description of your role..." className="w-full p-3 bg-white border border-slate-100 rounded-xl text-sm min-h-[100px]" value={exp.description} onChange={(e) => handleExperienceChange(i, 'description', e.target.value)} />
-                  </div>
-                ))}
-              </div>
+              <input
+                placeholder="School/Junior College"
+                className={subInputStyle}
+                value={edu12.school}
+                onChange={(e) => setEdu12({ ...edu12, school: e.target.value })}
+              />
+              <input
+                placeholder="Year"
+                type="number"
+                className={subInputStyle}
+                value={edu12.year}
+                onChange={(e) => setEdu12({ ...edu12, year: e.target.value })}
+              />
+              <input
+                placeholder="Percentage"
+                className={subInputStyle + " col-span-2"}
+                value={edu12.grade}
+                onChange={(e) => setEdu12({ ...edu12, grade: e.target.value })}
+              />
             </div>
 
-            {/* 5. Grid for Skills & Others (Compact) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-               <div className="bg-white p-6 rounded-[24px] border border-slate-100 shadow-sm">
-                  <h2 className="text-sm font-black uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2">
-                    <Code size={16} /> Skills
-                  </h2>
-                  <div className="flex flex-wrap gap-2">
-                    {skills.map((s, i) => (
-                      <input key={i} type="text" value={s} onChange={(e) => handleSkillChange(i, e.target.value)} className="w-full p-2 bg-slate-50 border-none rounded-lg text-xs font-bold" placeholder="Skill Name" />
-                    ))}
-                    <button onClick={() => setSkills([...skills, ""])} className="w-full py-2 border-2 border-dashed border-slate-200 rounded-lg text-slate-400 hover:text-indigo-600 transition-all text-xs font-bold">+ Add Skill</button>
-                  </div>
-               </div>
-
-               <div className="bg-white p-6 rounded-[24px] border border-slate-100 shadow-sm">
-                  <h2 className="text-sm font-black uppercase tracking-widest text-slate-400 mb-4 flex items-center gap-2">
-                    <GraduationCap size={16} /> Education
-                  </h2>
-                  <button onClick={() => setEducations([...educations, {degree:"", university:"", year:""}])} className="w-full py-2 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-bold hover:bg-indigo-100 transition-all mb-3">Add Education</button>
-                  {educations.map((edu, i) => (
-                    <div key={i} className="mb-2 p-3 bg-slate-50 rounded-xl">
-                       <input type="text" placeholder="Degree" className="w-full bg-transparent text-xs font-bold outline-none mb-1" value={edu.degree} />
-                       <input type="text" placeholder="Uni" className="w-full bg-transparent text-[10px] text-slate-500 outline-none" value={edu.university} />
-                    </div>
-                  ))}
-               </div>
-            </div>
-
-          </div>
-
-          {/* Right: Real-time Preview */}
-          <div className="lg:col-span-5 relative">
-            <div className="sticky top-8 space-y-6">
-              <div className="bg-slate-900 rounded-[32px] p-2 shadow-2xl overflow-hidden border-[8px] border-slate-800">
-                <div className="bg-white rounded-[24px] h-[750px] overflow-y-auto custom-scrollbar shadow-inner">
-                  <ResumePreview 
-                    data={{
-                      personal_info: { full_name: name, email, phone, linkedin, website: github },
-                      professional_summary: summary,
-                      experience: experiences.map(exp => ({ position: exp.title, company: exp.company, description: exp.description })),
-                      education: educations.map(edu => ({ degree: edu.degree, institution: edu.university, graduation_date: edu.year })),
-                      skills
-                    }} 
-                    selected={template} 
-                  />
-                </div>
-              </div>
-
-              {/* Action Buttons Overlay */}
+            {/* Degree */}
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+              <p className="text-xs font-black text-slate-400 uppercase tracking-widest mb-3 italic">
+                Degree / Graduation
+              </p>
               <div className="grid grid-cols-2 gap-4">
-                <button onClick={() => {}} className="flex items-center justify-center gap-2 py-4 bg-white border border-slate-200 rounded-2xl font-black text-slate-700 hover:bg-slate-50 transition-all shadow-sm">
-                  <FileDown size={20} className="text-slate-400" /> Export DOCX
-                </button>
-                <button onClick={() => {}} className="flex items-center justify-center gap-2 py-4 bg-indigo-600 text-white rounded-2xl font-black hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100">
-                  <FileDown size={20} /> Download PDF
-                </button>
+                <input
+                  placeholder="College Name"
+                  className={subInputStyle}
+                  value={eduDegree.college}
+                  onChange={(e) =>
+                    setEduDegree({ ...eduDegree, college: e.target.value })
+                  }
+                />
+                <input
+                  placeholder="Year of Passing"
+                  type="number"
+                  className={subInputStyle}
+                  value={eduDegree.year}
+                  onChange={(e) =>
+                    setEduDegree({ ...eduDegree, year: e.target.value })
+                  }
+                />
+                <input
+                  placeholder="Percentage / CGPA"
+                  className={subInputStyle + " col-span-2"}
+                  value={eduDegree.grade}
+                  onChange={(e) =>
+                    setEduDegree({ ...eduDegree, grade: e.target.value })
+                  }
+                />
               </div>
             </div>
+          </section>
+
+
+          {/* 3. Projects */}
+          <section className="form-section section-card bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-xl font-semibold text-slate-800 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#f0f9ff' }}>
+                  <svg className="w-5 h-5 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                </div>
+                Projects
+              </h2>
+              { (
+                <button type="button" onClick={addProject} className="btn-hover bg-sky-500 px-3 py-1.5 text-sm font-medium rounded-lg text-white"> Add Project </button>
+              )}
+            </div>
+            {projects.map((proj) => (
+              <div key={proj.id} className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 mb-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                <input placeholder="Project Name" className={subInputStyle + " md:col-span-2"} value={proj.name} onChange={(e) => updateProject(proj.id, 'name', e.target.value)} />
+                <input placeholder="Frontend" className={subInputStyle} value={proj.frontend} onChange={(e) => updateProject(proj.id, 'frontend', e.target.value)} />
+                <input placeholder="Backend" className={subInputStyle} value={proj.backend} onChange={(e) => updateProject(proj.id, 'backend', e.target.value)} />
+                <input placeholder="Database Name" className={subInputStyle + " md:col-span-2"} value={proj.database} onChange={(e) => updateProject(proj.id, 'database', e.target.value)}/>              </div>
+            ))}
+          </section>
+
+          {/* 4. Experience & Skills */}
+          <section className="form-section section-card bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-xl font-semibold text-slate-800 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: '#dcfce7' }}>
+                   <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2-2H5a2 2 0 00-2-2v10a2 2 0 002 2z"></path></svg>
+                </div>
+                Work Experience
+              </h2>
+              <button type="button" onClick={addExperience} className="btn-hover bg-indigo-600 px-3 py-1.5 text-sm font-medium rounded-lg text-white">Add Role</button>
+            </div>
+            {experiences.map((exp) => (
+              <div key={exp.id} className="p-4 rounded-xl border border-slate-200 bg-slate-50/50 mb-4 grid grid-cols-2 gap-4">
+                  <input placeholder="Job Title" className={subInputStyle} value={exp.title} onChange={(e) => updateExperience(exp.id, 'title', e.target.value)} />
+                  <input placeholder="Company" className={subInputStyle} value={exp.company} onChange={(e) => updateExperience(exp.id, 'company', e.target.value)} />
+                  <input type="date" className={subInputStyle} value={exp.start} onChange={(e) => updateExperience(exp.id, 'start', e.target.value)} />
+                  <input type="date" className={subInputStyle} value={exp.end} onChange={(e) => updateExperience(exp.id, 'end', e.target.value)} />
+                  <textarea rows="2" placeholder="Responsibilities" className={subInputStyle + " col-span-2"} value={exp.desc} onChange={(e) => updateExperience(exp.id, 'desc', e.target.value)} />
+              </div>
+            ))}
+          </section>
+
+          {/* 5. Certifications */}
+          <section
+            className="form-section section-card bg-white rounded-2xl p-6 shadow-sm border border-slate-100"
+            style={{ animationDelay: "0.6s" }}
+          >
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center"
+                  style={{ backgroundColor: "#fef9c3" }}
+                >
+                  <svg
+                    className="w-5 h-5"
+                    style={{ color: "#eab308" }}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"
+                    ></path>
+                  </svg>
+                </div>
+                <h2 className="text-xl font-semibold text-slate-800">
+                  Certifications
+                </h2>
+              </div>
+                    
+              <button
+                type="button"
+                onClick={addCertification}
+                className="btn-hover inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-lg text-white"
+                style={{ backgroundColor: "#6366f1" }}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+                Add
+              </button>
+            </div>
+                    
+            <div className="space-y-4">
+              {certifications.map((cert) => (
+                <div
+                  key={cert.id}
+                  className="p-4 rounded-xl border border-slate-200 bg-slate-50/50"
+                >
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              
+                    <div>
+                      <label className="block text-sm font-medium text-slate-600 mb-1.5">
+                        Certification Name
+                      </label>
+                      <input
+                        type="text"
+                        className={subInputStyle}
+                        placeholder="AWS Solutions Architect"
+                        value={cert.name}
+                        onChange={(e) =>
+                          updateCertification(cert.id, "name", e.target.value)
+                        }
+                      />
+                    </div>
+                      
+                    <div>
+                      <label className="block text-sm font-medium text-slate-600 mb-1.5">
+                        Issuing Organization
+                      </label>
+                      <input
+                        type="text"
+                        className={subInputStyle}
+                        placeholder="Amazon Web Services"
+                        value={cert.org}
+                        onChange={(e) =>
+                          updateCertification(cert.id, "org", e.target.value)
+                        }
+                      />
+                    </div>
+                      
+                    <div>
+                      <label className="block text-sm font-medium text-slate-600 mb-1.5">
+                        Issue Date
+                      </label>
+                      <input
+                        type="date"
+                        className={subInputStyle}
+                        value={cert.date}
+                        onChange={(e) =>
+                          updateCertification(cert.id, "date", e.target.value)
+                        }
+                      />
+                    </div>
+                      
+                    <div>
+                      <label className="block text-sm font-medium text-slate-600 mb-1.5">
+                        Credential ID
+                      </label>
+                      <input
+                        type="text"
+                        className={subInputStyle}
+                        placeholder="ABC123XYZ"
+                        value={cert.credentialId}
+                        onChange={(e) =>
+                          updateCertification(cert.id, "credentialId", e.target.value)
+                        }
+                      />
+                    </div>
+                      
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+
+          <section className="form-section section-card bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+            <h2 className="text-xl font-semibold mb-5 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 underline">S</div> Skills
+            </h2>
+            <textarea placeholder="Technical Skills (React, Python, etc.)" className={inputStyle} rows="2" onChange={(e) => setSkills({...skills, tech: e.target.value})} />
+          </section>
+          <section className="form-section section-card bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+        <h2 className="text-xl font-semibold mb-5 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 underline">
+            L
+          </div>
+          Languages
+        </h2>
+
+        <div className="flex gap-2 mb-3">
+          <input
+            type="text"
+            placeholder="Add Language (e.g., Hindi, English)"
+            className={inputStyle}
+            value={languages.current}
+            onChange={(e) => setLanguages({...languages, current: e.target.value})}
+          />
+          <button
+            type="button"
+            onClick={addLanguage}
+            className="btn-hover bg-indigo-600 text-white px-4 py-2 rounded-lg"
+          >
+            Add
+          </button>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          {languages.list.map((lang, idx) => (
+            <div key={idx} className="flex items-center gap-1 bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm">
+              {lang}
+              <button
+                type="button"
+                onClick={() => removeLanguage(lang)}
+                className="font-bold"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+        </section>
+
+        <section className="form-section section-card bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+        <h2 className="text-xl font-semibold mb-5 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-600 underline">
+            D
+          </div>
+          Declaration
+        </h2>
+
+       <textarea className={inputStyle} rows="3" value={declaration} readOnly />
+        </section>
+
+
+
+          {/* SUBMIT BUTTON */}
+          <div className="flex gap-4 justify-center">
+            <button
+              type="submit"
+              className="btn-hover bg-indigo-600 text-white px-10 py-4 rounded-xl font-bold shadow-lg shadow-indigo-200"
+            >
+              Preview Designs
+            </button>
           </div>
 
-        </div>
+        </form>
+
+        {showSuccess && (
+          <div className="fixed bottom-6 right-6 bg-green-500 text-white px-6 py-4 rounded-xl shadow-lg z-50">
+            CV Data Processed!
+          </div>
+        )}
+
+        {isLoading && (
+          <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-white p-8 rounded-2xl flex flex-col items-center gap-4 shadow-2xl">
+              <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+              <p className="font-bold text-slate-600">
+                Generating Designs...
+              </p>
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );
 };
+
+export default ResumeBuilder;

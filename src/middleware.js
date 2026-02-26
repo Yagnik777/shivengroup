@@ -4,35 +4,35 @@ import { NextResponse } from "next/server";
 export default withAuth(
   function middleware(req) {
     const token = req.nextauth?.token;
-    const path = req.nextUrl.pathname; 
+    const path = req.nextUrl.pathname;
     const role = token?.role;
 
-    // --- DEBUGGING LOGS ---
-    console.log("--------------------------------------");
-    console.log("PATH:", path);
-    console.log("TOKEN ROLE:", role);
-
-    // ૧. જો રોલ 'recruiter' હોય અને યુઝર પેજ એક્સેસ કરવાની કોશિશ કરે
-    if (path.startsWith("/user") && role !== "user") {
-      return NextResponse.redirect(new URL("/login", req.url));
+    // ૧. જો પેજ રજીસ્ટર વાળું હોય, તો આગળ જવા દો (No Role Check for Registration)
+    if (path.includes("/register")) {
+      return NextResponse.next();
     }
 
-    // ૨. જો રોલ 'user' હોય અને રેક્રુટર પેજ એક્સેસ કરવાની કોશિશ કરે
-    if (path.startsWith("/recruiter") && role !== "recruiter") {
-      return NextResponse.redirect(new URL("/login", req.url));
-    }
-
-    // ૩. Service Provider સિક્યોરિટી
-    if (path.startsWith("/serviceprovider") && role !== "serviceprovider") {
-      return NextResponse.redirect(new URL("/login", req.url));
-    }
-    
-    // ૪. Admin સિક્યોરિટી
+    // ૨. રોલ વાઈઝ સિક્યોરિટી (ફક્ત ડેશબોર્ડ કે પ્રોટેક્ટેડ પેજ માટે)
     if (path.startsWith("/admin") && role !== "admin") {
-      return NextResponse.redirect(new URL("/login", req.url));
+      return NextResponse.redirect(new URL("/login", req.nextUrl));
     }
 
-    // --- CACHE CONTROL HEADERS ADDED HERE ---
+    // Recruiter સિક્યોરિટી (પણ રજીસ્ટર પેજ સિવાય)
+    if (path.startsWith("/recruiter") && role !== "recruiter") {
+      return NextResponse.redirect(new URL("/login", req.nextUrl));
+    }
+
+    // Service Provider સિક્યોરિટી (પણ રજીસ્ટર પેજ સિવાય)
+    if (path.startsWith("/serviceprovider") && role !== "serviceprovider") {
+      return NextResponse.redirect(new URL("/login", req.nextUrl));
+    }
+
+    // User/Candidate સિક્યોરિટી
+    if (path.startsWith("/user") && role !== "user") {
+      return NextResponse.redirect(new URL("/login", req.nextUrl));
+    }
+
+    // ૩. Cache Control Headers
     const response = NextResponse.next();
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     response.headers.set('Pragma', 'no-cache');
@@ -42,12 +42,32 @@ export default withAuth(
   },
   {
     callbacks: {
-      authorized: ({ token }) => !!token,
+      authorized: ({ token, req }) => {
+        const path = req.nextUrl.pathname;
+
+        // લોગિન વગર એક્સેસ કરવા માટેના પબ્લિક પાથ (Register, API, etc.)
+        if (
+          path.includes("/register") || 
+          path.startsWith("/api/auth") || 
+          path === "/login" ||
+          path.startsWith("/_next")
+        ) {
+          return true;
+        }
+
+        // બાકીના પ્રોટેક્ટેડ રૂટ્સ (Dashboard, etc.) માટે ટોકન હોવું ફરજિયાત છે
+        return !!token;
+      },
+    },
+    pages: {
+      signIn: "/login",
+      error: "/login",
     },
   }
 );
 
 export const config = {
+  // મિડલવેર કયા પાથ પર કામ કરશે તે લિસ્ટ
   matcher: [
     "/admin/:path*",
     "/recruiter/:path*",

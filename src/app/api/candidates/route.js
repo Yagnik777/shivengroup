@@ -7,7 +7,6 @@ import path from "path";
 
 export const dynamic = "force-dynamic";
 
-// ✅ GET: લોગિન થયેલા યુઝરની પ્રોફાઇલ મેળવવા માટે
 export async function GET(req) {
   try {
     const session = await getServerSession(authOptions);
@@ -17,30 +16,27 @@ export async function GET(req) {
 
     await connectMongo();
 
-    // URL માંથી ઈમેલ પેરામીટર લેવા (જો હોય તો)
-    const { searchParams } = new URL(req.url);
-    const emailParam = searchParams.get("email");
-
-    // જો ઈમેલ હોય તો એનાથી શોધો, નહીતર લોગિન યુઝરના ID થી શોધો
-    let query = { userId: session.user.id };
-    if (emailParam) {
-      query = { email: emailParam };
+    // Admin gets all candidates
+    if (session.user.role === "admin") {
+      const candidates = await Candidate.find({})
+        .sort({ createdAt: -1 })
+        .lean();
+      return new Response(JSON.stringify(candidates), { status: 200 });
     }
 
-    const candidate = await Candidate.findOne(query).lean();
-
-    if (!candidate) {
-      return new Response(JSON.stringify(null), { status: 200 }); // ડેટા ન મળે તો null મોકલો
-    }
+    // Normal user gets own profile
+    const candidate = await Candidate.findOne({
+      userId: session.user.id,
+    }).lean();
 
     return new Response(JSON.stringify(candidate), { status: 200 });
+
   } catch (error) {
     console.error("❌ GET Error:", error);
     return new Response(JSON.stringify({ message: "Server Error" }), { status: 500 });
   }
 }
 
-// ✅ POST: CREATE or UPDATE candidate profile
 export async function POST(req) {
   try {
     const session = await getServerSession(authOptions);
@@ -51,11 +47,12 @@ export async function POST(req) {
     await connectMongo();
     const formData = await req.formData();
 
-    // ✅ File Upload Handling
+    // ===========================
+    // FILE UPLOAD HANDLING
+    // ===========================
     const fileFields = ["resume", "coverLetter", "experienceLetter"];
     const uploadedFiles = {};
 
-    // Uploads ફોલ્ડર છે કે નહીં તે ચેક કરો
     const uploadDir = path.join(process.cwd(), "public/uploads");
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
@@ -72,34 +69,114 @@ export async function POST(req) {
       }
     }
 
+    // ===========================
+    // MAIN DATA MAPPING
+    // ===========================
     const updateData = {
+      userId: session.user.id,
+
+      // Basic Info
       fullName: formData.get("fullName"),
       email: formData.get("email")?.trim() || session.user.email,
       mobile: formData.get("mobile"),
       dob: formData.get("dob"),
+      gender: formData.get("gender"),
       profession: formData.get("profession"),
       position: formData.get("position"),
-      role: formData.get("role"),
-      experience: formData.get("experience"),
-      city: formData.get("city"),
-      reference: formData.get("reference"),
+      Reference: formData.get("Reference"),
+
+      // Address
       pincode: formData.get("pincode")?.trim() || "",
       state: formData.get("state"),
-      education: formData.get("education"),
-      linkedin: formData.get("linkedin"),
+      city: formData.get("city"),
+      address: formData.get("address"),
+      reference: formData.get("reference"),
+
+      // Links
+      github: formData.get("github"),
       portfolio: formData.get("portfolio"),
+
+      // Work Experience
+      currentCompanyName: formData.get("currentCompanyName"),
+      jobDepartment: formData.get("jobDepartment"),
+      jobIndustry: formData.get("jobIndustry"),
+      jobFromDate: formData.get("jobFromDate"),
+      jobToDate: formData.get("jobToDate"),
+      jobDescription: formData.get("jobDescription"),
+      presentEmploymentStatus: formData.get("presentEmploymentStatus"),
+      lastSalary: formData.get("lastSalary"),
+      expectedSalary: formData.get("expectedSalary"),
+      noticePeriod: formData.get("noticePeriod"),
+
+      // Formal Education
+      classXYear: formData.get("classXYear"),
+      classXBoard: formData.get("classXBoard"),
+      classXSchool: formData.get("classXSchool"),
+      classXPercentage: formData.get("classXPercentage"),
+
+      classXIIYear: formData.get("classXIIYear"),
+      classXIIBoard: formData.get("classXIIBoard"),
+      classXIISchool: formData.get("classXIISchool"),
+      classXIIPercentage: formData.get("classXIIPercentage"),
+
+      graduationYear: formData.get("graduationYear"),
+      graduationUniversity: formData.get("graduationUniversity"),
+      graduationInstitute: formData.get("graduationInstitute"),
+      graduationSpecialization: formData.get("graduationSpecialization"),
+      graduationPercentage: formData.get("graduationPercentage"),
+
+      postGraduationYear: formData.get("postGraduationYear"),
+      postGraduationUniversity: formData.get("postGraduationUniversity"),
+      postGraduationInstitute: formData.get("postGraduationInstitute"),
+      postGraduationSpecialization: formData.get("postGraduationSpecialization"),
+      postGraduationPercentage: formData.get("postGraduationPercentage"),
+
+      // Non Formal
+      itiYear: formData.get("itiYear"),
+      itiUniversity: formData.get("itiUniversity"),
+      itiInstitute: formData.get("itiInstitute"),
+      itiSpecialization: formData.get("itiSpecialization"),
+      itiPercentage: formData.get("itiPercentage"),
+
+      diplomaYear: formData.get("diplomaYear"),
+      diplomaUniversity: formData.get("diplomaUniversity"),
+      diplomaInstitute: formData.get("diplomaInstitute"),
+      diplomaSpecialization: formData.get("diplomaSpecialization"),
+      diplomaPercentage: formData.get("diplomaPercentage"),
+
+      pgDiplomaYear: formData.get("pgDiplomaYear"),
+      pgDiplomaUniversity: formData.get("pgDiplomaUniversity"),
+      pgDiplomaInstitute: formData.get("pgDiplomaInstitute"),
+      pgDiplomaSpecialization: formData.get("pgDiplomaSpecialization"),
+      pgDiplomaPercentage: formData.get("pgDiplomaPercentage"),
+
+      internshipDetails: formData.get("internshipDetails"),
+      projectsDetails: formData.get("projectsDetails"),
+      apprenticeDetails: formData.get("apprenticeDetails"),
+
       ...uploadedFiles,
     };
 
-    // Skills handling
+    // ===========================
+    // Skills Parsing
+    // ===========================
     try {
       const skillsRaw = formData.get("skills");
       updateData.skills = skillsRaw ? JSON.parse(skillsRaw) : [];
-    } catch (e) {
+    } catch {
       updateData.skills = [];
     }
 
-    // ✅ UPSERT Logic (જો હોય તો Update, નહીતર Create)
+    // ===========================
+    // Awards Parsing
+    // ===========================
+    try {
+      const awardsRaw = formData.get("awards");
+      updateData.awards = awardsRaw ? JSON.parse(awardsRaw) : [];
+    } catch {
+      updateData.awards = [];
+    }
+
     const candidate = await Candidate.findOneAndUpdate(
       { userId: session.user.id },
       { $set: updateData },
@@ -107,8 +184,12 @@ export async function POST(req) {
     );
 
     return new Response(JSON.stringify(candidate), { status: 201 });
+
   } catch (error) {
-    console.error("❌ Error saving candidate:", error);
-    return new Response(JSON.stringify({ message: "Server Error", error: error.message }), { status: 500 });
+    console.error("❌ POST Error:", error);
+    return new Response(
+      JSON.stringify({ message: "Server Error", error: error.message }),
+      { status: 500 }
+    );
   }
 }

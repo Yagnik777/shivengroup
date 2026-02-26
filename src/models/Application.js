@@ -66,16 +66,41 @@
 // export default mongoose.model("Application", applicationSchema);
 import mongoose from "mongoose";
 
-mongoose.models = {}; 
-
 const ApplicationSchema = new mongoose.Schema({
-  jobId: String,
-  recruiterId: String,
+  jobId: { type: String, required: true },
+  recruiterId: { type: String, required: true },
   name: String,
   email: String,
   role: String,
-  resumeUrl: { type: String, default: "" },
-  appliedAt: { type: Date, default: Date.now }
-}, { strict: false });
+  resumeUrl: String,
+  mobile: String,
+  city: String,
+  state: String,
+  profession: String,
+  
+  // Education
+  graduationUniversity: String,
+  graduationSpecialization: String,
+  graduationPercentage: String,
+  classXIIPercentage: String,
+  classXPercentage: String,
+  
+  // Work Experience
+  presentEmploymentStatus: String,
+  currentCompanyName: String,
+  jobDepartment: String,
+  jobIndustry: String,
+  jobDescription: String,
+  jobFromDate: String,
+  jobToDate: String,
+  
+  // Skills & Socials
+  skills: mongoose.Schema.Types.Mixed, 
+  github: String,
+  portfolio: String,
 
-export default mongoose.model("Application", ApplicationSchema);
+  status: { type: String, default: "Pending" },
+  appliedAt: { type: Date, default: Date.now }
+});
+
+export default mongoose.models.Application || mongoose.model("Application", ApplicationSchema);
