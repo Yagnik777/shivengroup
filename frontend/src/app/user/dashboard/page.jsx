@@ -64,8 +64,11 @@ export default function UserDashboard() {
       <UserSidebar onCollapseChange={setIsSidebarCollapsed} />
 
       {/* 2. મેઈન કન્ટેન્ટ એરિયા */}
-      <main className={`flex-1 overflow-y-auto transition-all duration-300 pt-20 lg:pt-0 
-        ${isSidebarCollapsed ? "lg:ml-24" : "lg:ml-72"}`}>
+      {/* <main className={`flex-1 overflow-y-auto transition-all duration-300 pt-20 lg:pt-0 
+        ${isSidebarCollapsed ? "lg:ml-24" : "lg:ml-72"}`}> */}
+        {/* 2. મેઈન કન્ટેન્ટ એરિયા */}
+<main className={`flex-1 overflow-y-auto transition-all duration-300 pt-20 lg:pt-0 relative z-0
+  ${isSidebarCollapsed ? "lg:ml-24" : "lg:ml-72"}`}>
         
         <div className="p-4 sm:p-6 md:p-8 lg:p-12 max-w-7xl mx-auto">
           

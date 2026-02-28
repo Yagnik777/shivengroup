@@ -64,20 +64,30 @@ export default function UserSidebar() {
       </div>
 
       {/* --- Mobile Overlay --- */}
-      {isMobileOpen && (
+      {/* {isMobileOpen && (
         <div 
           className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] lg:hidden transition-all"
           onClick={() => setIsMobileOpen(false)}
         />
-      )}
+      )} */}
+      {isMobileOpen && (
+  <div 
+    className="fixed inset-0 bg-transparent z-[110] lg:hidden" 
+    onClick={() => setIsMobileOpen(false)}
+  />
+)}
 
       {/* --- Main Sidebar (Fix: Adjusted top and height to stay between Navbar and Footer) --- */}
       <aside className={`
-        fixed left-0 bg-white border-r border-slate-100 flex flex-col transition-all duration-300 z-[40]
+        fixed left-0 bg-white border-r border-slate-100 flex flex-col transition-all duration-300 z-[150]
         ${isMobileOpen ? "translate-x-0 shadow-2xl top-0 h-full" : "-translate-x-full lg:translate-x-0 lg:top-[80px] lg:h-[calc(90vh-160px)]"}
         lg:w-72 w-72 pt-4
       `}>
-        
+        <div className="lg:hidden flex justify-end p-4">
+    <button onClick={() => setIsMobileOpen(false)} className="p-2 text-slate-500">
+      <X size={24} />
+    </button>
+  </div>
         {/* Toggle Button Removed for Fixed Sidebar */}
 
         {/* Logo Section - Completely Removed */}
@@ -86,6 +96,7 @@ export default function UserSidebar() {
         </div>
 
         {/* Navigation Links */}
+        
         <nav className="flex-1 px-4 space-y-1 overflow-y-auto no-scrollbar scroll-smooth">
           {menuItems.map((item) => {
             const isActive = pathname === item.href;
