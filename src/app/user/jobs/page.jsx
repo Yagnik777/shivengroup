@@ -5,7 +5,7 @@ import MarkdownIt from "markdown-it";
 import { useSession } from "next-auth/react";
 import UserSidebar from "@/components/UserSidebar";
 import { Search, MapPin, Briefcase, Building, ChevronRight, Filter, X } from 'lucide-react';
-import 'tailwindcss/tailwind.css';
+
 
 const md = new MarkdownIt({ html: true, linkify: true, typographer: true });
 
