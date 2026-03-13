@@ -77,7 +77,9 @@ export async function POST(req) {
 
       // Basic Info
       fullName: formData.get("fullName"),
-      email: formData.get("email")?.trim() || session.user.email,
+      //email: formData.get("email")?.trim() || session.user.email,
+      // હવે ઈમેલ યુઝરના ઇનપુટથી નહીં, પણ તેના લોગિન સેશનથી જ સેટ થશે
+      email: session.user.email,
       mobile: formData.get("mobile"),
       dob: formData.get("dob"),
       gender: formData.get("gender"),
@@ -162,7 +164,7 @@ export async function POST(req) {
     // ===========================
     try {
       const skillsRaw = formData.get("skills");
-      updateData.skills = skillsRaw ? JSON.parse(skillsRaw) : [];
+      updateData.skills = skillsRaw ? skillsRaw.split(",").map(skill => skill.trim()) : [];
     } catch {
       updateData.skills = [];
     }

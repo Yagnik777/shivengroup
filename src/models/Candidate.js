@@ -25,7 +25,7 @@ const CandidateSchema = new mongoose.Schema(
     address: String,
 
     // reference: String,
-    skills: String,
+    skills: [String],
 
     // 🔹 Links
     github: String,

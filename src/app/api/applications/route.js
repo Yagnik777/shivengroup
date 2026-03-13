@@ -1,102 +1,3 @@
-// import connectMongo from "@/lib/mongodb";
-// import Application from "@/models/Application";
-// import Job from "@/models/Job";
-// import { getServerSession } from "next-auth/next";
-// import { authOptions } from "@/app/api/auth/[...nextauth]/route";
-// import { NextResponse } from "next/server";
-// import fs from "fs";
-// import path from "path";
-
-// export const dynamic = "force-dynamic";
-// //export const config = { api: { bodyParser: false } };
-
-// // ---------------- POST - Submit new application ----------------
-// export async function POST(req) {
-//   try {
-//     await connectMongo();
-    
-
-
-//     const session = await getServerSession(authOptions);
-//     if (!session?.user?.id) {
-//       return NextResponse.json({ message: "Login required" }, { status: 401 });
-//     }
-
-//     const formData = await req.formData();
-
-//     const jobId = formData.get("jobId");
-//     const resumeFile = formData.get("resume");
-//     const price = Number(formData.get("pricing"));
-//     const estimatedDays = Number(formData.get("timeRequired"));
-//     const coverLetter = formData.get("additionalInfo");
-//     const phone = formData.get("phone") || "";
-//     const linkedIn = formData.get("linkedIn") || "";
-//     const portfolio = formData.get("portfolio") || "";
-
-//     if (!jobId || !resumeFile || isNaN(price) || isNaN(estimatedDays) || !coverLetter) {
-//       return NextResponse.json({ message: "Missing required fields or resume" }, { status: 400 });
-//     }
-
-//     const job = await Job.findById(jobId);
-//     if (!job) return NextResponse.json({ message: "Job not found" }, { status: 404 });
-
-//     const exists = await Application.findOne({ job: jobId, candidate: session.user.id });
-//     if (exists) return NextResponse.json({ message: "Already applied" }, { status: 400 });
-
-//     // Save resume directly to /public folder
-//     const publicDir = path.join(process.cwd(), "public");
-//     if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir, { recursive: true });
-
-//     const fileName = `${Date.now()}-${resumeFile.name}`;
-//     const filePath = path.join(publicDir, fileName);
-//     const buffer = Buffer.from(await resumeFile.arrayBuffer());
-//     fs.writeFileSync(filePath, buffer);
-
-//     const attachment = {
-//       name: resumeFile.name,
-//       url: `/${fileName}`, // ✅ Saved directly in /public
-//       type: resumeFile.type,
-//     };
-
-//     const app = await Application.create({
-//       job: job._id,
-//       candidate: session.user.id,
-//       name: session.user.name,
-//       email: session.user.email,
-//       phone,
-//       linkedIn,
-//       portfolio,
-//       price,
-//       estimatedDays,
-//       coverLetter,
-//       attachments: [attachment],
-//       jobCategory: job.jobCategory,
-//       jobType: job.type,
-//       experienceLevel: job.experienceLevel,
-//       status: "pending",
-//     });
-
-//     return NextResponse.json({ message: "Application submitted", application: app }, { status: 201 });
-//   } catch (err) {
-//     console.error("Error saving application:", err);
-//     return NextResponse.json({ message: "Failed to submit application", error: err.message }, { status: 500 });
-//   }
-// }
-
-// // ---------------- GET - Fetch all applications ----------------
-// export async function GET() {
-//   try {
-//     await connectMongo();
-//     const applications = await Application.find()
-//       .populate("job", "title jobCategory type experienceLevel")
-//       .sort({ createdAt: -1 });
-
-//     return NextResponse.json(applications || [], { status: 200 });
-//   } catch (err) {
-//     console.error("Error fetching applications:", err);
-//     return NextResponse.json({ message: "Failed to fetch applications", error: err.message }, { status: 500 });
-//   }
-// }
 import { NextResponse } from "next/server";
 import connectMongo from "@/lib/mongodb";
 import Application from "@/models/Application";
@@ -160,7 +61,8 @@ export async function POST(req) {
       portfolio: userProfile.portfolio,
 
       status: "Pending", 
-      appliedAt: new Date()
+      appliedAt: new Date(),
+      userId: session.user.id
     });
 
     return NextResponse.json({ ok: true, data: newApp });
@@ -172,25 +74,37 @@ export async function POST(req) {
 
 // 2. GET: રિક્રુટર માટે બધા જ કેન્ડિડેટ્સનું લિસ્ટ મેળવવા
 // 2. GET: ફક્ત જે-તે રિક્રુટર માટેના જ કેન્ડિડેટ્સનું લિસ્ટ મેળવવા
-export async function GET() {
+export async function GET(req) {
   try {
     await connectMongo();
-
-    // ચેક કરો કે રિક્રુટર લોગિન છે કે નહીં
     const session = await getServerSession(authOptions);
-    
-    if (!session) {
+
+    if (!session || !session.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // ફક્ત એજ એપ્લિકેશન શોધો જેમાં recruiterId લોગિન થયેલ યુઝરની ID સાથે મેચ થતી હોય
-    // ધારો કે તમારી સિસ્ટમમાં session.user.id એ રિક્રુટરની ID છે
-    const apps = await Application.find({ recruiterId: session.user.id }).sort({ appliedAt: -1 });
+    let apps;
+    if (session.user.role === "recruiter") {
+      apps = await Application.find({ recruiterId: session.user.id }).sort({ appliedAt: -1 });
+    } else {
+      // અહીં ફેરફાર: ઈમેલને Case-insensitive શોધવા માટે Regex વાપરીએ
+      const userEmail = session.user.email;
+      // Removed sensitive logging
+      // console.log("Fetching apps for email:", userEmail);
+      console.log("Fetching apps for authenticated user");
+      
+      apps = await Application.find({
+        $or: [
+          { email: userEmail.toLowerCase() },
+          { userId: session.user.id }
+        ]
+      }).collation({ locale: "en", strength: 2 }).sort({ appliedAt: -1 });
+    }
 
-    return NextResponse.json({ ok: true, data: apps });
+    return NextResponse.json({ ok: true, data: apps || [] });
   } catch (err) {
     console.error("Fetch Error:", err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ ok: false, data: [] }, { status: 500 });
   }
 }
 

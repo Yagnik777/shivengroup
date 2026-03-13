@@ -122,10 +122,10 @@ export default function Sidebar({ activePage }) {
         </nav>
 
         {/* Support Card */}
-        <div className="mt-4 bg-slate-50 p-4 rounded-3xl border border-slate-100">
+        {/* <div className="mt-4 bg-slate-50 p-4 rounded-3xl border border-slate-100">
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Support</p>
           <button className="text-sm font-bold text-indigo-600 hover:underline">Help Center</button>
-        </div>
+        </div> */}
       </aside>
     </>
   );

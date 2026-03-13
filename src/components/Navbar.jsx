@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LogOut } from "lucide-react"; 
+import { LogOut, ChevronDown } from "lucide-react"; 
 
 const NavLink = ({ children, href = "#", isPrimary = false, onClick }) => (
   <Link
@@ -23,17 +23,18 @@ const NavLink = ({ children, href = "#", isPrimary = false, onClick }) => (
 export default function NavBar() {
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isFeaturesOpen, setIsFeaturesOpen] = useState(false); // Features dropdown state
   const [menuHeight, setMenuHeight] = useState(0);
   const menuRef = useRef(null);
   const { data: session } = useSession();
   const user = session?.user;
 
-  // લોગો પર ક્લિક કરવાથી સીધું ડેશબોર્ડ પર જવા માટેનું ફંક્શન
-  const handleLogoOrDashboardClick = (e) => {
+  // લોગો પર ક્લિક કરવાથી યુઝરના રોલ મુજબ ડેશબોર્ડ અથવા લોગિન પેજ પર જવા માટેનું ફંક્શન
+  const handleLogoClick = (e) => {
     if (e) e.preventDefault();
     
     if (!user) {
-      router.push("/");
+      router.push("/login"); // જો લોગિન ના હોય તો લોગિન પેજ પર મોકલશે
     } else {
       switch (user.role) {
         case "admin":
@@ -76,14 +77,17 @@ export default function NavBar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // મોબાઈલ અને ડેસ્કટોપ માટે લિંક્સનું લિસ્ટ
   const navLinks = [
     { name: "About Us", href: "/aboutus" },
-    { name: "Features", href: "/features" },
-    { name: "Blogs", href: "/blog" },
     { name: "Careers", href: "/careers" },
     { name: "Contact Us", href: "/contactus" },
     { name: "Philanthropy", href: "/philanthropy" },
+  ];
+
+  const featureLinks = [
+    { name: "User Features", href: "/features/user" },
+    { name: "Recruiter Features", href: "/features/recruiter" },
+    //{ name: "Service Provider Features", href: "/features/serviceprovider" },
   ];
 
   return (
@@ -95,22 +99,49 @@ export default function NavBar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           
-          {/* Logo Section - Redirects to Dashboard */}
+          {/* Logo Section - Redirects to Specific Dashboard or Login */}
           <div
-            onClick={handleLogoOrDashboardClick}
+            onClick={handleLogoClick}
             className="cursor-pointer flex-shrink-0 text-2xl font-black text-indigo-600 tracking-tighter hover:text-indigo-800 transition-colors"
           >
             JobConnect<span className="text-slate-900">Pro</span>
           </div>
 
           {/* Desktop Navigation Links */}
-          <div className="hidden md:flex flex-grow justify-center ml-12 space-x-2">
-            <button 
-              onClick={handleLogoOrDashboardClick}
+          <div className="hidden md:flex flex-grow justify-center ml-12 space-x-2 items-center">
+            {/* Home Link (Replaced Dashboard) */}
+            <Link 
+              href="/"
               className="px-3 py-2 text-sm font-bold text-slate-700 hover:text-indigo-600 transition duration-150 ease-in-out"
             >
-              Dashboard
-            </button>
+              Home
+            </Link>
+
+            {/* Features Dropdown */}
+            <div 
+              className="relative group"
+              onMouseEnter={() => setIsFeaturesOpen(true)}
+              onMouseLeave={() => setIsFeaturesOpen(false)}
+            >
+              {/* <button className="flex items-center gap-1 px-3 py-2 text-sm font-bold text-slate-700 hover:text-indigo-600 transition duration-150 ease-in-out">
+                Features <ChevronDown size={14} className={`transition-transform ${isFeaturesOpen ? 'rotate-180' : ''}`} />
+              </button> */}
+              
+              {isFeaturesOpen && (
+                <div className="absolute left-0 mt-0 w-56 bg-white border border-slate-100 shadow-xl rounded-2xl py-2 z-50">
+                  {featureLinks.map((feature) => (
+                    <Link
+                      key={feature.href}
+                      href={feature.href}
+                      className="block px-4 py-2.5 text-sm font-bold text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
+                    >
+                      {feature.name}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {navLinks.map((link) => (
               <NavLink key={link.href} href={link.href}>{link.name}</NavLink>
             ))}
@@ -120,7 +151,7 @@ export default function NavBar() {
           <div className="hidden md:flex items-center space-x-6">
             {user ? (
               <div className="flex items-center space-x-6">
-                <div className="flex flex-col items-end">
+                <div className="flex flex-col items-end cursor-pointer" onClick={handleLogoClick}>
                   <span className="text-[9px] font-black uppercase tracking-widest text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-md">
                     {user.role?.replace('_', ' ')}
                   </span>
@@ -166,18 +197,43 @@ export default function NavBar() {
         </div>
       </div>
 
-      {/* Mobile Navigation Menu - Fixed to show all fields */}
+      {/* Mobile Navigation Menu */}
       <div
         className="md:hidden overflow-hidden transition-all duration-300 ease-in-out bg-white border-t border-slate-50 shadow-xl"
         style={{ maxHeight: isMenuOpen ? "100vh" : "0px" }}
       >
         <div ref={menuRef} className="px-4 pt-4 pb-8 space-y-1">
-          <button 
-            onClick={handleLogoOrDashboardClick}
+          <Link 
+            href="/"
+            onClick={() => setIsMenuOpen(false)}
             className="block w-full text-left px-4 py-3 text-base font-bold text-indigo-600 bg-indigo-50 rounded-xl mb-2"
           >
-            Dashboard
-          </button>
+            Home
+          </Link>
+          
+          {/* Mobile Features Dropdown */}
+          <div className="space-y-1">
+            <button 
+              onClick={() => setIsFeaturesOpen(!isFeaturesOpen)}
+              className="flex justify-between items-center w-full px-4 py-3 text-base font-bold text-slate-700 hover:bg-slate-50 rounded-xl transition-all"
+            >
+              Features <ChevronDown size={18} className={isFeaturesOpen ? 'rotate-180' : ''} />
+            </button>
+            {isFeaturesOpen && (
+              <div className="pl-4 space-y-1 bg-slate-50 rounded-xl py-2">
+                {featureLinks.map((feature) => (
+                  <Link
+                    key={feature.href}
+                    href={feature.href}
+                    onClick={() => setIsMenuOpen(false)}
+                    className="block px-4 py-2 text-sm font-bold text-slate-600"
+                  >
+                    {feature.name}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
           
           {navLinks.map((link) => (
             <Link 
@@ -192,7 +248,7 @@ export default function NavBar() {
           
           {user ? (
             <div className="pt-4 mt-4 border-t border-slate-100">
-               <div className="px-4 py-3 mb-4 bg-slate-50 rounded-xl">
+               <div className="px-4 py-3 mb-4 bg-slate-50 rounded-xl" onClick={handleLogoClick}>
                  <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest mb-1">{user.role?.replace('_', ' ')}</p>
                  <p className="text-sm font-bold text-slate-700">{user.name}</p>
                </div>

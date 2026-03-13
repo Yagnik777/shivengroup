@@ -14,6 +14,11 @@ export default function PostJobForm() {
   // --- 🛠️ Dynamic Data States ---
   const [categories, setCategories] = useState([]); 
   const [experienceLevels, setExperienceLevels] = useState([]); 
+  // નવી સ્ટેટ્સ (Admin Dropdowns માટે)
+  const [industries, setIndustries] = useState([]);
+  const [professions, setProfessions] = useState([]);
+  const [designations, setDesignations] = useState([]);
+  const [departments, setDepartments] = useState([]);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -25,6 +30,11 @@ export default function PostJobForm() {
     description: '',
     requirements: '', 
     deadline: '',
+    // નવા ફિલ્ડ્સના ઇનિશિયલ સ્ટેટ
+    industry: '',
+    profession: '',
+    designation: '',
+    department: '',
   });
 
   // --- 📡 Fetch Admin Settings ---
@@ -35,11 +45,13 @@ export default function PostJobForm() {
         if (res.ok) {
           const allData = await res.json();
           
-          const filteredCategories = allData.filter(item => item.type === 'jobCategory');
-          setCategories(filteredCategories);
-          
-          const filteredExperience = allData.filter(item => item.type === 'experienceLevel');
-          setExperienceLevels(filteredExperience);
+          setCategories(allData.filter(item => item.type === 'jobCategory'));
+          setExperienceLevels(allData.filter(item => item.type === 'experienceLevel'));
+          // નવા ડ્રોપડાઉન ડેટા ફિલ્ટર કર્યા
+          setIndustries(allData.filter(item => item.type === 'industry'));
+          setProfessions(allData.filter(item => item.type === 'profession'));
+          setDesignations(allData.filter(item => item.type === 'designation'));
+          setDepartments(allData.filter(item => item.type === 'department'));
         }
       } catch (err) {
         console.error("Error fetching dynamic fields:", err);
@@ -138,7 +150,6 @@ export default function PostJobForm() {
         alert("🚀 Job Published Successfully!");
         router.push("/recruiter/dashboard");
       } else {
-        // Handling the profile error and redirecting to the registration page
         if (data.error === "Company profile not found" || data.error === "Profile incomplete") {
           alert("Profile not found. Please complete your registration first.");
           router.push("/recruiter/register");
@@ -222,6 +233,28 @@ export default function PostJobForm() {
                       <option value="Remote">Remote</option>
                     </select>
                   </div>
+
+                  {/* નવા એડ કરેલા ફિલ્ડ્સ: Industry અને Profession */}
+                  <div>
+                    <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Industry</label>
+                    <select name="industry" required onChange={handleChange} value={formData.industry}
+                      className="mt-2 w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-800">
+                      <option value="">Select Industry</option>
+                      {industries.map((ind, idx) => (
+                        <option key={idx} value={ind.value}>{ind.value}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Profession</label>
+                    <select name="profession" required onChange={handleChange} value={formData.profession}
+                      className="mt-2 w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-800">
+                      <option value="">Select Profession</option>
+                      {professions.map((prof, idx) => (
+                        <option key={idx} value={prof.value}>{prof.value}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </section>
 
@@ -255,6 +288,28 @@ export default function PostJobForm() {
                     <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Deadline</label>
                     <input type="date" name="deadline" required onChange={handleChange} value={formData.deadline}
                       className="mt-2 w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl font-semibold text-slate-800" />
+                  </div>
+
+                  {/* નવા એડ કરેલા ફિલ્ડ્સ: Designation અને Department */}
+                  <div>
+                    <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Designation</label>
+                    <select name="designation" required onChange={handleChange} value={formData.designation}
+                      className="mt-2 w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-800">
+                      <option value="">Select Designation</option>
+                      {designations.map((des, idx) => (
+                        <option key={idx} value={des.value}>{des.value}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black uppercase text-slate-400 ml-1">Department</label>
+                    <select name="department" required onChange={handleChange} value={formData.department}
+                      className="mt-2 w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none font-semibold text-slate-800">
+                      <option value="">Select Department</option>
+                      {departments.map((dept, idx) => (
+                        <option key={idx} value={dept.value}>{dept.value}</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
               </section>

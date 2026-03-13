@@ -118,6 +118,11 @@ const RecruiterSchema = new mongoose.Schema(
     gstNumber: { type: String, required: true },
     designation: { type: String, required: true },
     location: { type: String, required: true },
+    address: { type: String, required: true },
+    city: { type: String, default: "" },
+    state: { type: String, default: "" },
+    pincode: { type: String, default: "" },
+    country: { type: String, default: "" },
 
     registrationType: { type: String, enum: ['company', 'individual'], default: 'company' },
     aadharNumber: { type: String, default: null },
@@ -135,9 +140,26 @@ const RecruiterSchema = new mongoose.Schema(
     website: { type: String, default: "" },
     founded: { type: String, default: "" },
     description: { type: String, default: "" },
+    profession: {
+      type: String,
+      default: ""
+    },
+    department: {
+      type: String,
+      default: ""
+    },
+    designation: { type: String, default: "" },
     specialties: { type: [String], default: [] },
     companySize: { type: String, default: "11-50 employees" },
     logo: { type: String, default: null }, // પ્રોફાઇલ પિક્ચર/લોગો માટે
+
+    // ✅ આ નવા ફિલ્ડ્સ ઉમેરો
+    contactPersonName: { type: String, default: "" },
+    contactPersonNumber: { type: String, default: "" },
+    contactPersonEmail: { type: String, default: "" },
+    ownerName: { type: String, default: "" },
+    ownerNumber: { type: String, default: "" },
+    ownerEmail: { type: String, default: "" },
 
     isEmailVerified: { type: Boolean, default: false },
     isApproved: { type: Boolean, default: false },

@@ -3,18 +3,13 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
-  LayoutDashboard, Search, FileText, User, 
-  Bell, Clock, Sparkles, Headphones, Bookmark,
-  ChevronLeft, ChevronRight, Menu, X, LogOut,
-  Briefcase, CheckCircle, Calendar, ShieldCheck,
-  Mail, Users, Settings, Wallet, Globe, Landmark,
-  LineChart, FolderOpen, MessageSquare, Wand2, Hammer
+  LayoutDashboard, Search, User, 
+  Clock, Menu, X, Hammer,FileText, // આ ઉમેરો
+  Image
 } from 'lucide-react';
-import { signOut } from 'next-auth/react';
 
 export default function UserSidebar() {
   const pathname = usePathname();
-  // isCollapsed સ્ટેટ કાઢી નાખ્યું છે કારણ કે હવે સાઇડબાર ફિક્સ રહેશે
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   useEffect(() => {
@@ -24,36 +19,25 @@ export default function UserSidebar() {
   const menuItems = [
     { icon: <LayoutDashboard size={20}/>, label: "Dashboard", href: "/user/dashboard" },
     { icon: <User size={20}/>, label: "Profile", href: "/user/profile" },
-    //{ icon: <Wand2 size={20}/>, label: "Resume Builder & Analyzer", href: "/user/resume" },
-    //{ icon: <FileText size={20}/>, label: "Cover Letter Generator", href: "/user/cover-letter" },
     { icon: <Search size={20}/>, label: "Find Jobs", href: "/careers" },
-    //{ icon: <Briefcase size={20}/>, label: "Apply Job Openings", href: "/user/apply" },
+    
+    // નવા ઉમેરેલા પેજીસ
+    { icon: <FileText size={20}/>, label: "Post", href: "/user/post" },
+    //{ icon: <Image size={20}/>, label: "Media Feed", href: "/user/media" },
+    
     { icon: <Clock size={20}/>, label: "My Status", href: "/user/status" },
-    // { icon: <Bookmark size={20}/>, label: "Saved Jobs", href: "/user/saved" },
-    // { icon: <Calendar size={20}/>, label: "Events & Activities", href: "/user/events" },
-    // { icon: <Sparkles size={20}/>, label: "AI Features", href: "/user/resume-toolkit" },
-    // { icon: <Users size={20}/>, label: "Post Referral Jobs", href: "/user/referrals" },
-    // { icon: <ShieldCheck size={20}/>, label: "Job Scam Detection", href: "/user/scam-detection" },
-    // { icon: <Mail size={20}/>, label: "Auto-Mailer System", href: "/user/mailer" },
-    // { icon: <MessageSquare size={20}/>, label: "Mailing List", href: "/user/mailing-list" },
-    // { icon: <Settings size={20}/>, label: "Contact Management", href: "/user/contacts" },
-    // { icon: <Headphones size={20}/>, label: "Specialized Services", href: "/user/counseling" },
-    //{ icon: <Bell size={20}/>, label: "Notifications", href: "/user/notifications" },
-    // { icon: <FolderOpen size={20}/>, label: "Files & Folder", href: "/user/files" },
-    // { icon: <Wallet size={20}/>, label: "Digital Wallet", href: "/user/wallet" },
-    // { icon: <Globe size={20}/>, label: "My Website", href: "/user/website" },
-    // { icon: <Landmark size={20}/>, label: "Government Schemes", href: "/user/schemes" },
-    // { icon: <LineChart size={20}/>, label: "Company Insights", href: "/user/insights" },
-    // { icon: <LineChart size={20}/>, label: "Analytics & Reports", href: "/user/analytics" },
-    {icon:  <Hammer size={20}/>, label: "Career Counseling", href: "/user/service" },
+    
+    // કમેન્ટ કરેલી લાઈનો એમને એમ છે
+    //{ icon: <Hammer size={20}/>, label: "Career Counseling", href: "/user/service" },
+    { icon: <Clock size={20}/>, label: "Resume Builder", href: "/user/resumebuilder" },
   ];
 
   return (
     <>
       {/* --- Mobile Header --- */}
-      <div className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-slate-100 fixed top-0 left-0 right-0 z-[100]">
-        <div className="flex items-center gap-2">
-          {/* Logo Removed from Mobile Header */}
+      <div className="lg:hidden flex items-center justify-between p-4 bg-white border-b border-slate-100 fixed top-0 left-0 right-0 z-[100] h-16">
+        <div className="text-lg font-black text-indigo-600">
+          JobConnect<span className="text-slate-900">Pro</span>
         </div>
         <button 
           onClick={() => setIsMobileOpen(true)}
@@ -66,23 +50,28 @@ export default function UserSidebar() {
       {/* --- Mobile Overlay --- */}
       {isMobileOpen && (
         <div 
-          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] lg:hidden transition-all"
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[110] lg:hidden transition-all duration-300"
           onClick={() => setIsMobileOpen(false)}
         />
       )}
 
-      {/* --- Main Sidebar (Fix: Adjusted top and height to stay between Navbar and Footer) --- */}
+      {/* --- Main Sidebar --- */}
       <aside className={`
-        fixed left-0 bg-white border-r border-slate-100 flex flex-col transition-all duration-300 z-[40]
-        ${isMobileOpen ? "translate-x-0 shadow-2xl top-0 h-full" : "-translate-x-full lg:translate-x-0 lg:top-[80px] lg:h-[calc(90vh-160px)]"}
-        lg:w-72 w-72 pt-4
+        fixed left-0 bg-white border-r border-slate-100 flex flex-col transition-all duration-300 z-[120] lg:z-[40]
+        ${isMobileOpen 
+          ? "translate-x-0 w-72 top-0 h-full shadow-2xl" 
+          : "-translate-x-full lg:translate-x-0 lg:top-[80px] lg:h-[calc(100vh-100px)] lg:w-72 w-72"}
+        pt-4
       `}>
         
-        {/* Toggle Button Removed for Fixed Sidebar */}
-
-        {/* Logo Section - Completely Removed */}
-        <div className="p-4 mb-2 lg:px-4 flex justify-center">
-          {/* Logo and Text have been removed as per request */}
+        {/* Mobile Close Button */}
+        <div className="lg:hidden flex justify-end px-4 mb-4">
+          <button 
+            onClick={() => setIsMobileOpen(false)}
+            className="p-2 bg-slate-50 rounded-xl text-slate-600"
+          >
+            <X size={22} />
+          </button>
         </div>
 
         {/* Navigation Links */}
@@ -106,9 +95,10 @@ export default function UserSidebar() {
             );
           })}
         </nav>
-
-        
       </aside>
+
+      {/* Spacer for mobile to push content below fixed header */}
+      <div className="h-16 lg:hidden" />
     </>
   );
 }

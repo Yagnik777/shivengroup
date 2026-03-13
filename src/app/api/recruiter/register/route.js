@@ -1,3 +1,4 @@
+//src/app/api/recruiter/register/route.js
 export const dynamic = "force-dynamic";
 
 import connectMongo from "@/lib/mongodb";
@@ -5,20 +6,37 @@ import Recruiter from "@/models/Recruiter";
 import OTP from "@/models/EmailOTP";
 import bcrypt from "bcryptjs";
 import nodemailer from "nodemailer";
-import fs from "fs/promises";
+import fs from "fs/promises"; 
 import path from "path";
 
 // --- GET Method ---
-export async function GET(req) {
+// --- GET Method (FIXED) ---
+export async function GET(req) {  
   try {
     await connectMongo();
     const { searchParams } = new URL(req.url);
     const action = searchParams.get("action");
+    const email = searchParams.get("email"); // URL માંથી ઈમેલ મેળવો
 
     if (action === "get-profile") {
-      const data = await Recruiter.findOne().sort({ createdAt: -1 });
-      return Response.json({ data: data || null });
+      if (!email) {
+        return Response.json({ error: "Email is required to fetch profile" }, { status: 400 });
+      }
+
+      if (!req.session || !req.session.user || req.session.user.email !== email.toLowerCase().trim()) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      // હાર્ડકોડેડ findOne() ને બદલે ઈમેલથી ફિલ્ટર કરો
+      const data = await Recruiter.findOne({ email: email.toLowerCase().trim() });
+      
+      if (!data) {
+        return Response.json({ data: null, message: "Profile not found" });
+      }
+
+      return Response.json({ data: data });
     }
+    
     return Response.json({ error: "Invalid GET action" }, { status: 400 });
   } catch (err) {
     return Response.json({ error: err.message }, { status: 500 });
@@ -53,26 +71,30 @@ export async function POST(req) {
 
     // --- Action: Update Profile (FIXED) ---
     if (action === "update-profile") {
-      // બોડી માંથી ઈમેલ કાઢવો જરૂરી છે ફિલ્ટર માટે
       const filterEmail = body.email || email;
-
+    
       if (!filterEmail) {
         return Response.json({ error: "Email is required to update profile" }, { status: 400 });
       }
-
-      // 'action' ને અપડેટ ડેટા માંથી કાઢી નાખવો
-      const { action: _, ...updateData } = body; 
-
+    
+      // 'action', 'email' અને '_id' ને અલગ કરવા જેથી મોડેલમાં એક્સ્ટ્રા ડેટા તરીકે ન જાય
+      const { 
+        action: _, 
+        email: __, 
+        _id: ___, 
+        ...updateData   
+      } = body; 
+    
       const updated = await Recruiter.findOneAndUpdate(
-        { email: filterEmail.toLowerCase().trim() }, // ઈમેલ થી યુઝર શોધો
-        { $set: updateData },
-        { new: true } 
+        { email: filterEmail.toLowerCase().trim() },
+        { $set: updateData }, 
+        { new: true, runValidators: true } 
       );
-
+    
       if (!updated) {
         return Response.json({ error: "User not found" }, { status: 404 });
       }
-
+    
       return Response.json({ message: "Profile updated successfully!", data: updated });
     }
 

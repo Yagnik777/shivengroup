@@ -11,7 +11,7 @@ import {
 
 // --- Components ---
 
-const InputField = ({ label, name, type = "text", placeholder = "", value, onChange, maxLength }) => (
+const InputField = ({ label, name, type = "text", placeholder = "", value, onChange, maxLength, readOnly }) => (
   <div className="flex flex-col gap-2">
     <label className="text-sm font-bold text-slate-600 ml-1">{label}</label>
     <input 
@@ -20,13 +20,17 @@ const InputField = ({ label, name, type = "text", placeholder = "", value, onCha
       value={value || ""}
       onChange={onChange} 
       maxLength={maxLength}
+      readOnly={readOnly}
       placeholder={placeholder}
-      className="w-full p-4 bg-white border-2 border-slate-100 rounded-xl focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 outline-none transition-all shadow-sm font-bold text-slate-700"
+      className={`w-full p-4 border-2 rounded-xl outline-none transition-all shadow-sm font-bold ${
+        readOnly 
+          ? "bg-slate-100 cursor-not-allowed border-slate-200 text-slate-400" 
+          : "bg-white border-slate-100 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 text-slate-700"
+      }`}
     />
   </div>
 );
 
-// Preview Item Component for Clean Look
 const PreviewItem = ({ label, value, icon: Icon, color = "indigo" }) => (
   <div className="flex flex-col gap-1">
     <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">{label}</p>
@@ -56,45 +60,33 @@ const SelectField = ({ label, name, options, value, onChange }) => (
   </div>
 );
 
-const UniversitySearchField = ({ label, name, value, onChange, placeholder }) => {
-  const handleSearch = async (val) => {
-    onChange({ target: { name, value: val } });
-  };
+const UniversitySearchField = ({ label, name, value, onChange, placeholder }) => (
+  <div className="flex flex-col gap-2 relative">
+    <label className="text-sm font-bold text-slate-600 ml-1">{label}</label>
+    <input 
+      type="text"
+      name={name}
+      value={value || ""}
+      onChange={onChange}
+      placeholder={placeholder}
+      className="w-full p-4 bg-white border-2 border-slate-100 rounded-xl focus:border-indigo-500 outline-none shadow-sm transition-all font-bold text-slate-700"
+    />
+  </div>
+);
 
-  return (
-    <div className="flex flex-col gap-2 relative">
-      <label className="text-sm font-bold text-slate-600 ml-1">{label}</label>
-      <input 
-        type="text"
-        name={name}
-        value={value || ""}
-        onChange={(e) => handleSearch(e.target.value)}
-        placeholder={placeholder}
-        className="w-full p-4 bg-white border-2 border-slate-100 rounded-xl focus:border-indigo-500 outline-none shadow-sm transition-all font-bold text-slate-700"
-      />
-    </div>
-  );
-};
-
-const BoardSearchField = ({ label, name, value, onChange, placeholder, type = "board" }) => {
-  const handleSearch = async (val) => {
-    onChange({ target: { name, value: val } });
-  };
-
-  return (
-    <div className="flex flex-col gap-2 relative">
-      <label className="text-sm font-bold text-slate-600 ml-1">{label}</label>
-      <input 
-        type="text"
-        name={name}
-        value={value || ""}
-        onChange={(e) => handleSearch(e.target.value)}
-        placeholder={placeholder}
-        className="w-full p-4 bg-white border-2 border-slate-100 rounded-xl focus:border-indigo-500 outline-none shadow-sm transition-all font-bold text-slate-700"
-      />
-    </div>
-  );
-};
+const BoardSearchField = ({ label, name, value, onChange, placeholder, type = "board" }) => (
+  <div className="flex flex-col gap-2 relative">
+    <label className="text-sm font-bold text-slate-600 ml-1">{label}</label>
+    <input 
+      type="text"
+      name={name}
+      value={value || ""}
+      onChange={onChange}
+      placeholder={placeholder}
+      className="w-full p-4 bg-white border-2 border-slate-100 rounded-xl focus:border-indigo-500 outline-none shadow-sm transition-all font-bold text-slate-700"
+    />
+  </div>
+);
 
 // --- Main Page ---
 
@@ -104,7 +96,7 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isExistingUser, setIsExistingUser] = useState(false);
-  const [isPreview, setIsPreview] = useState(false); // New State for Preview Mode
+  const [isPreview, setIsPreview] = useState(false);
   
   const allStates = [
     "Andaman and Nicobar Islands", "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", 
@@ -121,27 +113,42 @@ export default function ProfilePage() {
 
   const years = Array.from({ length: 40 }, (_, i) => (new Date().getFullYear() - i).toString());
 
+  const emptyWorkExperience = {
+    currentCompanyName: "", jobDepartment: "", jobIndustry: "",
+    jobFromDate: "", jobToDate: "", jobDescription: "",
+    presentEmploymentStatus: "", lastSalary: "", expectedSalary: "", noticePeriod: ""
+  };
+
+  const emptyFormalEducation = {
+    type: "Graduation", // graduation | postGraduation | classX | classXII | pgDiploma
+    year: "", university: "", institute: "", specialization: "", percentage: "", board: "", level: ""
+  };
+
+  const emptyNonFormalEducation = {
+    type: "ITI", // iti | diploma
+    year: "", university: "", institute: "", specialization: "", percentage: ""
+  };
+
   const [formData, setFormData] = useState({
     fullName: "", email: "", mobile: "", dob: "", 
     profession: "", position: "", role: "",
     pincode: "", state: "", city: "", address: "",
-    reference: "", 
+    reference: "",
     skills: "", 
     linkedin: "", portfolio: "", github: "",
-    gender: "", lastSalary: "", expectedSalary: "", noticePeriod: "",
-    currentCompanyName: "", jobDepartment: "", jobIndustry: "",
-    jobFromDate: "", jobToDate: "", jobDescription: "",
-    presentEmploymentStatus: "",
+    gender: "", jobIndustry: "",
     classXYear: "", classXBoard: "", classXSchool: "", classXPercentage: "",
     classXIIYear: "", classXIIBoard: "", classXIILevel: "", classXIISchool: "", classXIIPercentage: "",
-    itiYear: "", itiUniversity: "", itiSpecialization: "", itiInstitute: "", itiPercentage: "",
-    diplomaYear: "", diplomaUniversity: "", diplomaSpecialization: "", diplomaInstitute: "", diplomaPercentage: "",
-    graduationYear: "", graduationUniversity: "", graduationSpecialization: "", graduationInstitute: "", graduationPercentage: "",
-    postGraduationYear: "", postGraduationUniversity: "", postGraduationSpecialization: "", postGraduationInstitute: "", postGraduationPercentage: "",
-    pgDiplomaYear: "", pgDiplomaUniversity: "", pgDiplomaSpecialization: "", pgDiplomaInstitute: "", pgDiplomaPercentage: "",
-    internshipDetails: "", projectsDetails: "", apprenticeDetails: "",
     awards: [{ recognition: "", year: "", field: "", affiliation: "", level: "" }],
   });
+
+  const [workExperiences, setWorkExperiences] = useState([{ ...emptyWorkExperience }]);
+  const [formalEducations, setFormalEducations] = useState([{
+    type: "graduation", year: "", university: "", institute: "", specialization: "", percentage: "", board: "", level: ""
+  }]);
+  const [nonFormalEducations, setNonFormalEducations] = useState([{
+    type: "iti", year: "", university: "", institute: "", specialization: "", percentage: ""
+  }]);
 
   const [files, setFiles] = useState({ resume: null, coverLetter: null, experienceLetter: null });
 
@@ -170,13 +177,32 @@ export default function ProfilePage() {
           const data = await res.json();
           if (data && data._id) { 
             if (!data.awards || data.awards.length === 0) {
-                data.awards = [{ recognition: "", year: "", field: "", affiliation: "", level: "" }];
+              data.awards = [{ recognition: "", year: "", field: "", affiliation: "", level: "" }];
             }
             if (Array.isArray(data.skills)) {
               data.skills = data.skills.join(", ");
             }
-            setFormData(prev => ({ ...prev, ...data }));
+            if (data.workExperiences && data.workExperiences.length > 0) {
+              setWorkExperiences(data.workExperiences);
+            }
+            if (data.formalEducations && data.formalEducations.length > 0) {
+              setFormalEducations(data.formalEducations);
+            }
+            if (data.nonFormalEducations && data.nonFormalEducations.length > 0) {
+              setNonFormalEducations(data.nonFormalEducations);
+            }
+            setFormData(prev => ({
+              ...prev,
+              ...data,
+              fullName: prev.fullName || data.fullName || session?.user?.name || "",
+              email: session?.user?.email
+            }));
             setIsExistingUser(true);
+            setFormData(prev => ({ 
+              ...prev, 
+              email: session?.user?.email,
+              fullName: session?.user?.name || ""
+            }));
           }
         }
       } catch (err) {
@@ -202,6 +228,42 @@ export default function ProfilePage() {
         }
       } catch (err) { console.error("Pincode fetch error:", err); }
     }
+  };
+
+  // Work Experience handlers
+  const handleWorkChange = (index, e) => {
+    const { name, value } = e.target;
+    const updated = [...workExperiences];
+    updated[index][name] = value;
+    setWorkExperiences(updated);
+  };
+  const addWork = () => setWorkExperiences(prev => [...prev, { ...emptyWorkExperience }]);
+  const removeWork = (index) => {
+    if (workExperiences.length > 1) setWorkExperiences(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Formal Education handlers
+  const handleFormalChange = (index, e) => {
+    const { name, value } = e.target;
+    const updated = [...formalEducations];
+    updated[index][name] = value;
+    setFormalEducations(updated);
+  };
+  const addFormal = () => setFormalEducations(prev => [...prev, { ...emptyFormalEducation }]);
+  const removeFormal = (index) => {
+    if (formalEducations.length > 1) setFormalEducations(prev => prev.filter((_, i) => i !== index));
+  };
+
+  // Non Formal Education handlers
+  const handleNonFormalChange = (index, e) => {
+    const { name, value } = e.target;
+    const updated = [...nonFormalEducations];
+    updated[index][name] = value;
+    setNonFormalEducations(updated);
+  };
+  const addNonFormal = () => setNonFormalEducations(prev => [...prev, { ...emptyNonFormalEducation }]);
+  const removeNonFormal = (index) => {
+    if (nonFormalEducations.length > 1) setNonFormalEducations(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleAwardChange = (index, e) => {
@@ -250,6 +312,9 @@ export default function ProfilePage() {
           data.append(key, formData[key] || "");
         }
       });
+      data.append("workExperiences", JSON.stringify(workExperiences));
+      data.append("formalEducations", JSON.stringify(formalEducations));
+      data.append("nonFormalEducations", JSON.stringify(nonFormalEducations));
       if (files.resume) data.append("resume", files.resume);
       if (files.coverLetter) data.append("coverLetter", files.coverLetter);
       if (files.experienceLetter) data.append("experienceLetter", files.experienceLetter);
@@ -258,7 +323,7 @@ export default function ProfilePage() {
       if (res.ok) {
         alert(isExistingUser ? "Profile updated successfully!" : "Profile created successfully!");
         setIsExistingUser(true);
-        setIsPreview(true); // Auto switch to preview after save
+        setIsPreview(true);
       }
     } catch (err) { alert("Error saving profile"); } finally { setSaving(false); }
   };
@@ -305,152 +370,93 @@ export default function ProfilePage() {
           </div>
 
           <form className="space-y-10 pb-20" onSubmit={(e) => e.preventDefault()}>
-            
-            {/* 1. PERSONAL IDENTITY */}
+
+            {/* 1. PERSONAL PROFILE + ADDRESS (Merged) */}
             <div className="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-md">
               <div className="flex items-center gap-4 mb-8">
                 <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl"><User size={22}/></div>
-                <h2 className="text-2xl font-extrabold text-slate-800">Personal Identity</h2>
-              </div>
-              
-              {isPreview ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                  <PreviewItem label="Full Name" value={formData.fullName} />
-                  <PreviewItem label="Email Address" value={formData.email} icon={Mail} />
-                  <PreviewItem label="Mobile Number" value={formData.mobile} icon={Phone} />
-                  <PreviewItem label="Date of Birth" value={formData.dob} icon={Calendar} />
-                  <PreviewItem label="Gender" value={formData.gender} />
-                  <PreviewItem label="Profession" value={formData.profession} />
-                  <PreviewItem label="Desired Position" value={formData.position} />
-                  <PreviewItem label="Reference" value={formData.reference} />
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  <InputField label="Full Name" name="fullName" value={formData.fullName} onChange={handleInputChange} />
-                  <InputField label="Email Address" name="email" type="email" value={formData.email} onChange={handleInputChange} />
-                  <InputField label="Mobile Number" name="mobile" type="tel" value={formData.mobile} onChange={handleInputChange} />
-                  <InputField label="Date of Birth" name="dob" type="date" value={formData.dob} onChange={handleInputChange} />
-                  <SelectField label="Gender" name="gender" options={["Male", "Female", "Other"]} value={formData.gender} onChange={handleInputChange} />
-                  <SelectField label="Reference" name="reference" options={dropdownOptions.reference} value={formData.reference} onChange={handleInputChange} />
-                  <SelectField label="Profession" name="profession" options={dropdownOptions.profession} value={formData.profession} onChange={handleInputChange} />
-                  <SelectField label="Desired Position" name="position" options={dropdownOptions.position} value={formData.position} onChange={handleInputChange} />
-                </div>
-              )}
-            </div>
-
-            {/* 2. LOCATION */}
-            <div className="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-md">
-              <div className="flex items-center gap-4 mb-8">
-                <div className="p-3 bg-orange-50 text-orange-600 rounded-xl"><MapPin size={22}/></div>
-                <h2 className="text-2xl font-extrabold text-slate-800">Location & Address</h2>
-              </div>
-              
-              {isPreview ? (
-                <div className="space-y-6">
-                  <div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Full Address</p>
-                    <p className="text-lg font-bold text-slate-800 leading-relaxed">{formData.address || "—"}</p>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <PreviewItem label="City" value={formData.city} />
-                    <PreviewItem label="State" value={formData.state} />
-                    <PreviewItem label="Pincode" value={formData.pincode} />
-                  </div>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="md:col-span-3 flex flex-col gap-2">
-                    <label className="text-sm font-bold text-slate-600 ml-1">Full Address</label>
-                    <textarea name="address" rows="2" value={formData.address || ""} onChange={handleInputChange} className="w-full p-4 bg-white border-2 border-slate-100 rounded-xl outline-none focus:border-indigo-500 shadow-sm font-bold text-slate-700" />
-                  </div>
-                  <InputField label="Pincode" name="pincode" maxLength={6} placeholder="6 Digit Pincode" value={formData.pincode} onChange={handleInputChange} />
-                  <InputField label="City" name="city" value={formData.city} onChange={handleInputChange} />
-                  <SelectField label="State" name="state" options={allStates} value={formData.state} onChange={handleInputChange} />
-                </div>
-              )}
-            </div>
-
-            {/* 3. WORK EXPERIENCE */}
-            <div className="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-md">
-              <div className="flex items-center gap-4 mb-8">
-                <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl"><Briefcase size={22}/></div>
-                <h2 className="text-2xl font-extrabold text-slate-800">Work Experience</h2>
+                <h2 className="text-2xl font-extrabold text-slate-800">Personal Profile</h2>
               </div>
               
               {isPreview ? (
                 <div className="space-y-8">
-                   <div className="border-l-4 border-emerald-500 pl-6 space-y-2">
-                      <h3 className="text-2xl font-black text-slate-800">{formData.currentCompanyName || "Company Name Not Set"}</h3>
-                      <p className="text-indigo-600 font-bold text-lg">{formData.jobDepartment} • {formData.jobIndustry}</p>
-                      <div className="flex flex-wrap gap-4 text-sm font-bold text-slate-500">
-                        <span className="flex items-center gap-1 bg-slate-100 px-3 py-1 rounded-full"><Calendar size={14}/> {formData.jobFromDate} to {formData.jobToDate || "Present"}</span>
-                        <span className="flex items-center gap-1 bg-slate-100 px-3 py-1 rounded-full"><User size={14}/> {formData.presentEmploymentStatus}</span>
-                      </div>
-                      <div className="mt-4">
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Role Description</p>
-                        <p className="text-slate-600 leading-relaxed font-medium bg-slate-50 p-4 rounded-xl">{formData.jobDescription || "No description provided."}</p>
-                      </div>
-                   </div>
-                   <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-4 border-t border-slate-100">
-                      <PreviewItem label="Current CTC" value={formData.lastSalary} />
-                      <PreviewItem label="Expected CTC" value={formData.expectedSalary} />
-                      <PreviewItem label="Notice Period" value={formData.noticePeriod} />
-                   </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    <PreviewItem label="Full Name" value={formData.fullName} />
+                    <PreviewItem label="Email Address" value={formData.email} icon={Mail} />
+                    <PreviewItem label="Mobile Number" value={formData.mobile} icon={Phone} />
+                    <PreviewItem label="Date of Birth" value={formData.dob} icon={Calendar} />
+                    <PreviewItem label="Gender" value={formData.gender} />
+                    <PreviewItem label="Profession" value={formData.profession} />
+                    <PreviewItem label="Desired Position" value={formData.position} />
+                    <PreviewItem label="Reference" value={formData.reference} />
+                    <PreviewItem label="Industry" value={formData.jobIndustry} />
+                  </div>
+                  <hr className="border-slate-100" />
+                  <div className="space-y-4">
+                    <div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Full Address</p>
+                      <p className="text-lg font-bold text-slate-800 leading-relaxed">{formData.address || "—"}</p>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                      <PreviewItem label="City" value={formData.city} />
+                      <PreviewItem label="State" value={formData.state} />
+                      <PreviewItem label="Pincode" value={formData.pincode} />
+                    </div>
+                  </div>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  <InputField label="Current/Last Company" name="currentCompanyName" value={formData.currentCompanyName} onChange={handleInputChange} />
-                  <SelectField label="Department" name="jobDepartment" options={dropdownOptions.jobDepartment} value={formData.jobDepartment} onChange={handleInputChange} />
-                  <SelectField label="Industry" name="jobIndustry" options={dropdownOptions.jobCategory} value={formData.jobIndustry} onChange={handleInputChange} />
-                  <InputField label="From Date" name="jobFromDate" type="date" value={formData.jobFromDate} onChange={handleInputChange} />
-                  <InputField label="To Date" name="jobToDate" type="date" value={formData.jobToDate} onChange={handleInputChange} />
-                  <SelectField label="Employment Status" name="presentEmploymentStatus" options={dropdownOptions.experienceLevel} value={formData.presentEmploymentStatus} onChange={handleInputChange} />
-                  <InputField label="Current CTC" name="lastSalary" value={formData.lastSalary} onChange={handleInputChange} />
-                  <InputField label="Expected CTC" name="expectedSalary" value={formData.expectedSalary} onChange={handleInputChange} />
-                  <SelectField label="Notice Period" name="noticePeriod" options={["Immediate", "15 Days", "30 Days", "45 Days", "60 Days", "90 Days"]} value={formData.noticePeriod} onChange={handleInputChange} />
-                  <div className="md:col-span-3">
-                    <InputField label="Job Description" name="jobDescription" value={formData.jobDescription} onChange={handleInputChange} />
+                <div className="space-y-6">
+                  {/* Row 1: Name, Email, Mobile */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <InputField label="Full Name" name="fullName" value={formData.fullName} onChange={handleInputChange} />
+                    <InputField label="Email Address" name="email" type="email" value={formData.email} onChange={handleInputChange} readOnly={true}/>
+                    <InputField label="Mobile Number" name="mobile" type="tel" value={formData.mobile} onChange={handleInputChange} />
+                  </div>
+                  {/* Row 2: DOB, Gender, Position */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <InputField label="Date of Birth" name="dob" type="date" value={formData.dob} onChange={handleInputChange} />
+                    <SelectField label="Gender" name="gender" options={["Male", "Female", "Other"]} value={formData.gender} onChange={handleInputChange} />
+                    <SelectField label="Desired Position" name="position" options={dropdownOptions.position} value={formData.position} onChange={handleInputChange} />
+                  </div>
+                  {/* Row 3: Reference, Industry, Profession — all in one line */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <SelectField label="Reference" name="reference" options={dropdownOptions.reference} value={formData.reference} onChange={handleInputChange} />
+                    <SelectField label="Industry" name="jobIndustry" options={dropdownOptions.jobCategory} value={formData.jobIndustry} onChange={handleInputChange} />
+                    <SelectField label="Profession" name="profession" options={dropdownOptions.profession} value={formData.profession} onChange={handleInputChange} />
+                  </div>
+                  {/* Divider */}
+                  <hr className="border-slate-100" />
+                  {/* Address Fields */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="md:col-span-3 flex flex-col gap-2">
+                      <label className="text-sm font-bold text-slate-600 ml-1">Full Address</label>
+                      <textarea name="address" rows="2" value={formData.address || ""} onChange={handleInputChange} className="w-full p-4 bg-white border-2 border-slate-100 rounded-xl outline-none focus:border-indigo-500 shadow-sm font-bold text-slate-700" />
+                    </div>
+                    <InputField label="Pincode" name="pincode" maxLength={6} placeholder="6 Digit Pincode" value={formData.pincode} onChange={handleInputChange} />
+                    <InputField label="City" name="city" value={formData.city} onChange={handleInputChange} />
+                    <SelectField label="State" name="state" options={allStates} value={formData.state} onChange={handleInputChange} />
                   </div>
                 </div>
               )}
             </div>
 
-            {/* 4. FORMAL EDUCATION */}
+            {/* 2. FORMAL EDUCATION */}
             <div className="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-md">
-              <div className="flex items-center gap-4 mb-8">
-                <div className="p-3 bg-blue-50 text-blue-600 rounded-xl"><GraduationCap size={22}/></div>
-                <h2 className="text-2xl font-extrabold text-slate-800">Formal Education</h2>
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-blue-50 text-blue-600 rounded-xl"><GraduationCap size={22}/></div>
+                  <h2 className="text-2xl font-extrabold text-slate-800">Formal Education</h2>
+                </div>
+                {!isPreview && (
+                  <button type="button" onClick={addFormal} className="flex items-center gap-2 bg-blue-50 text-blue-600 px-4 py-2 rounded-xl font-bold hover:bg-blue-100 transition-all text-sm">
+                    <Plus size={18} /> Add Education
+                  </button>
+                )}
               </div>
-              
-              {isPreview ? (
-                <div className="space-y-10">
-                  {/* Graduation/PG */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {formData.graduationYear && (
-                      <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
-                         <p className="text-xs font-black text-indigo-500 uppercase mb-2">Graduation</p>
-                         <h4 className="text-xl font-black text-slate-800">{formData.graduationSpecialization}</h4>
-                         <p className="font-bold text-slate-600">{formData.graduationUniversity}</p>
-                         <p className="text-sm text-slate-500 font-medium">{formData.graduationInstitute}</p>
-                         <div className="flex justify-between mt-4 text-sm font-black text-slate-400">
-                            <span>Year: {formData.graduationYear}</span>
-                            <span className="text-indigo-600">Score: {formData.graduationPercentage}</span>
-                         </div>
-                      </div>
-                    )}
-                    {formData.postGraduationYear && (
-                      <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
-                         <p className="text-xs font-black text-indigo-500 uppercase mb-2">Post Graduation</p>
-                         <h4 className="text-xl font-black text-slate-800">{formData.postGraduationSpecialization}</h4>
-                         <p className="font-bold text-slate-600">{formData.postGraduationUniversity}</p>
-                         <div className="flex justify-between mt-4 text-sm font-black text-slate-400">
-                            <span>Year: {formData.postGraduationYear}</span>
-                            <span className="text-indigo-600">Score: {formData.postGraduationPercentage}</span>
-                         </div>
-                      </div>
-                    )}
-                  </div>
-                  {/* Schooling Table View */}
+
+              <div className="space-y-8">
+                {/* Class X & XII — fixed, always shown */}
+                {isPreview ? (
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                       <thead>
@@ -481,97 +487,192 @@ export default function ProfilePage() {
                       </tbody>
                     </table>
                   </div>
-                </div>
-              ) : (
-                <div className="space-y-8">
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <SelectField label="Class X Passing Year" name="classXYear" options={years} value={formData.classXYear} onChange={handleInputChange} />
-                    <BoardSearchField label="Class X Board" name="classXBoard" placeholder="" value={formData.classXBoard} onChange={handleInputChange} />
-                    <InputField label="School Name" name="classXSchool" value={formData.classXSchool} onChange={handleInputChange} />
-                    <InputField label="Percentage (%)" name="classXPercentage" value={formData.classXPercentage} onChange={handleInputChange} />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <SelectField label="Class XII Passing Year" name="classXIIYear" options={years} value={formData.classXIIYear} onChange={handleInputChange} />
-                    <BoardSearchField label="Class XII Board" name="classXIIBoard" placeholder="" value={formData.classXIIBoard} onChange={handleInputChange} />
-                    <InputField label="School Name" name="classXIISchool" value={formData.classXIISchool} onChange={handleInputChange} />
-                    <InputField label="Percentage (%)" name="classXIIPercentage" value={formData.classXIIPercentage} onChange={handleInputChange} />
-                  </div>
-                  <hr className="border-slate-100" />
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-                    <SelectField label="Graduation Year" name="graduationYear" options={years} value={formData.graduationYear} onChange={handleInputChange} />
-                    <UniversitySearchField label="University" name="graduationUniversity" placeholder="" value={formData.graduationUniversity} onChange={handleInputChange} />
-                    <InputField label="College/Institute" name="graduationInstitute" value={formData.graduationInstitute} onChange={handleInputChange} />
-                    <InputField label="Specialization" name="graduationSpecialization" value={formData.graduationSpecialization} onChange={handleInputChange} />
-                    <InputField label="CGPA / %" name="graduationPercentage" value={formData.graduationPercentage} onChange={handleInputChange} />
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-                    <SelectField label="Post Graduation Year" name="postGraduationYear" options={years} value={formData.postGraduationYear} onChange={handleInputChange} />
-                    <UniversitySearchField label="PG University" name="postGraduationUniversity" placeholder="" value={formData.postGraduationUniversity} onChange={handleInputChange} />
-                    <InputField label="College/Institute" name="postGraduationInstitute" value={formData.postGraduationInstitute} onChange={handleInputChange} />
-                    <InputField label="Specialization" name="postGraduationSpecialization" value={formData.postGraduationSpecialization} onChange={handleInputChange} />
-                    <InputField label="CGPA / %" name="postGraduationPercentage" value={formData.postGraduationPercentage} onChange={handleInputChange} />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* 5. NON FORMAL EDUCATION */}
-            <div className="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-md">
-              <div className="flex items-center gap-4 mb-8">
-                <div className="p-3 bg-cyan-50 text-cyan-600 rounded-xl"><BookOpen size={22}/></div>
-                <h2 className="text-2xl font-extrabold text-slate-800">Non Formal Education</h2>
-              </div>
-              
-              {isPreview ? (
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {formData.itiYear && (
-                      <div className="p-5 border border-slate-100 rounded-2xl">
-                         <p className="text-[10px] font-black text-cyan-600 uppercase">ITI Certification</p>
-                         <p className="text-lg font-black text-slate-800">{formData.itiSpecialization}</p>
-                         <p className="text-sm font-bold text-slate-500">{formData.itiInstitute} ({formData.itiYear})</p>
-                      </div>
-                    )}
-                    {formData.diplomaYear && (
-                      <div className="p-5 border border-slate-100 rounded-2xl">
-                         <p className="text-[10px] font-black text-cyan-600 uppercase">Diploma</p>
-                         <p className="text-lg font-black text-slate-800">{formData.diplomaSpecialization}</p>
-                         <p className="text-sm font-bold text-slate-500">{formData.diplomaInstitute} ({formData.diplomaYear})</p>
-                      </div>
-                    )}
-                    <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
-                       <PreviewItem label="Internship" value={formData.internshipDetails} />
-                       <PreviewItem label="Projects" value={formData.projectsDetails} />
-                       <PreviewItem label="Apprentice" value={formData.apprenticeDetails} />
+                ) : (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                      <SelectField label="Class X Passing Year" name="classXYear" options={years} value={formData.classXYear} onChange={handleInputChange} />
+                      <BoardSearchField label="Class X Board" name="classXBoard" placeholder="" value={formData.classXBoard} onChange={handleInputChange} />
+                      <InputField label="School Name" name="classXSchool" value={formData.classXSchool} onChange={handleInputChange} />
+                      <InputField label="Percentage (%)" name="classXPercentage" value={formData.classXPercentage} onChange={handleInputChange} />
                     </div>
-                 </div>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                      <SelectField label="Class XII Passing Year" name="classXIIYear" options={years} value={formData.classXIIYear} onChange={handleInputChange} />
+                      <BoardSearchField label="Class XII Board" name="classXIIBoard" placeholder="" value={formData.classXIIBoard} onChange={handleInputChange} />
+                      <InputField label="School Name" name="classXIISchool" value={formData.classXIISchool} onChange={handleInputChange} />
+                      <InputField label="Percentage (%)" name="classXIIPercentage" value={formData.classXIIPercentage} onChange={handleInputChange} />
+                    </div>
+                  </div>
+                )}
+
+                {/* Dynamic Formal Education Entries (Graduation, PG, PG Diploma, etc.) */}
+                {isPreview ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {formalEducations.map((edu, index) => (
+                      edu.year && (
+                        <div key={index} className="p-6 bg-slate-50 rounded-2xl border border-slate-100">
+                          <p className="text-xs font-black text-indigo-500 uppercase mb-2">{edu.type}</p>
+                          <h4 className="text-xl font-black text-slate-800">{edu.specialization}</h4>
+                          <p className="font-bold text-slate-600">{edu.university}</p>
+                          <p className="text-sm text-slate-500 font-medium">{edu.institute}</p>
+                          <div className="flex justify-between mt-4 text-sm font-black text-slate-400">
+                            <span>Year: {edu.year}</span>
+                            <span className="text-indigo-600">Score: {edu.percentage}</span>
+                          </div>
+                        </div>
+                      )
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {formalEducations.map((edu, index) => (
+                      <div key={index} className="relative group bg-slate-50 p-6 rounded-2xl border border-slate-100 space-y-4">
+                        {formalEducations.length > 1 && (
+                          <button type="button" onClick={() => removeFormal(index)} className="absolute -top-3 -right-3 bg-white text-rose-500 p-2 rounded-full shadow-md border border-rose-100 hover:bg-rose-50 transition-all opacity-0 group-hover:opacity-100 z-10">
+                            <Trash2 size={16} />
+                          </button>
+                        )}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                          <SelectField
+                            label="Education Type"
+                            name="type"
+                            options={["Graduation", "Post Graduation", "PG Diploma"]}
+                            value={edu.type}
+                            onChange={(e) => handleFormalChange(index, e)}
+                          />
+                          <SelectField label="Passing Year" name="year" options={years} value={edu.year} onChange={(e) => handleFormalChange(index, e)} />
+                          <UniversitySearchField label="University" name="university" placeholder="" value={edu.university} onChange={(e) => handleFormalChange(index, e)} />
+                          <InputField label="College/Institute" name="institute" value={edu.institute} onChange={(e) => handleFormalChange(index, e)} />
+                          <InputField label="Specialization" name="specialization" value={edu.specialization} onChange={(e) => handleFormalChange(index, e)} />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                          <InputField label="CGPA / %" name="percentage" value={edu.percentage} onChange={(e) => handleFormalChange(index, e)} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 3. NON FORMAL EDUCATION */}
+            <div className="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-md">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-cyan-50 text-cyan-600 rounded-xl"><BookOpen size={22}/></div>
+                  <h2 className="text-2xl font-extrabold text-slate-800">Non Formal Education</h2>
+                </div>
+                {!isPreview && (
+                  <button type="button" onClick={addNonFormal} className="flex items-center gap-2 bg-cyan-50 text-cyan-600 px-4 py-2 rounded-xl font-bold hover:bg-cyan-100 transition-all text-sm">
+                    <Plus size={18} /> Add Course
+                  </button>
+                )}
+              </div>
+
+              {isPreview ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {nonFormalEducations.map((edu, index) => (
+                    edu.year && (
+                      <div key={index} className="p-5 border border-slate-100 rounded-2xl">
+                        <p className="text-[10px] font-black text-cyan-600 uppercase">{edu.type}</p>
+                        <p className="text-lg font-black text-slate-800">{edu.specialization}</p>
+                        <p className="text-sm font-bold text-slate-500">{edu.institute} ({edu.year})</p>
+                      </div>
+                    )
+                  ))}
+                </div>
               ) : (
-                <div className="space-y-8">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-                    <SelectField label="ITI Passing Year" name="itiYear" options={years} value={formData.itiYear} onChange={handleInputChange} />
-                    <BoardSearchField label="ITI Board" name="itiUniversity" type="iti_diploma" placeholder="" value={formData.itiUniversity} onChange={handleInputChange} />
-                    <InputField label="ITI Institute" name="itiInstitute" value={formData.itiInstitute} onChange={handleInputChange} />
-                    <InputField label="ITI Specialization" name="itiSpecialization" value={formData.itiSpecialization} onChange={handleInputChange} />
-                    <InputField label="Percentage (%)" name="itiPercentage" value={formData.itiPercentage} onChange={handleInputChange} />
-                  </div>
-                  <hr className="border-slate-100" />
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-                    <SelectField label="Diploma Passing Year" name="diplomaYear" options={years} value={formData.diplomaYear} onChange={handleInputChange} />
-                    <BoardSearchField label="Diploma Board" name="diplomaUniversity" type="iti_diploma" placeholder="" value={formData.diplomaUniversity} onChange={handleInputChange} />
-                    <InputField label="Diploma Institute" name="diplomaInstitute" value={formData.diplomaInstitute} onChange={handleInputChange} />
-                    <InputField label="Specialization" name="diplomaSpecialization" value={formData.diplomaSpecialization} onChange={handleInputChange} />
-                    <InputField label="CGPA / %" name="diplomaPercentage" value={formData.diplomaPercentage} onChange={handleInputChange} />
-                  </div>
-                  <hr className="border-slate-100" />
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <InputField label="Internship/Training" name="internshipDetails" value={formData.internshipDetails} onChange={handleInputChange} />
-                    <InputField label="Projects" name="projectsDetails" value={formData.projectsDetails} onChange={handleInputChange} />
-                    <InputField label="Apprentice" name="apprenticeDetails" value={formData.apprenticeDetails} onChange={handleInputChange} />
-                  </div>
+                <div className="space-y-6">
+                  {nonFormalEducations.map((edu, index) => (
+                    <div key={index} className="relative group bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                      {nonFormalEducations.length > 1 && (
+                        <button type="button" onClick={() => removeNonFormal(index)} className="absolute -top-3 -right-3 bg-white text-rose-500 p-2 rounded-full shadow-md border border-rose-100 hover:bg-rose-50 transition-all opacity-0 group-hover:opacity-100 z-10">
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                        <SelectField
+                          label="Type"
+                          name="type"
+                          options={["ITI", "Diploma"]}
+                          value={edu.type}
+                          onChange={(e) => handleNonFormalChange(index, e)}
+                        />
+                        <SelectField label="Passing Year" name="year" options={years} value={edu.year} onChange={(e) => handleNonFormalChange(index, e)} />
+                        <BoardSearchField label="Board" name="university" type="iti_diploma" placeholder="" value={edu.university} onChange={(e) => handleNonFormalChange(index, e)} />
+                        <InputField label="Institute" name="institute" value={edu.institute} onChange={(e) => handleNonFormalChange(index, e)} />
+                        <InputField label="Specialization" name="specialization" value={edu.specialization} onChange={(e) => handleNonFormalChange(index, e)} />
+                      </div>
+                      <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <InputField label="Percentage (%)" name="percentage" value={edu.percentage} onChange={(e) => handleNonFormalChange(index, e)} />
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
 
-            {/* 6. AWARDS & RECOGNITION */}
+            {/* 4. WORK EXPERIENCE */}
+            <div className="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-md">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl"><Briefcase size={22}/></div>
+                  <h2 className="text-2xl font-extrabold text-slate-800">Work Experience</h2>
+                </div>
+                {!isPreview && (
+                  <button type="button" onClick={addWork} className="flex items-center gap-2 bg-emerald-50 text-emerald-600 px-4 py-2 rounded-xl font-bold hover:bg-emerald-100 transition-all text-sm">
+                    <Plus size={18} /> Add Experience
+                  </button>
+                )}
+              </div>
+
+              <div className="space-y-8">
+                {workExperiences.map((work, index) => (
+                  isPreview ? (
+                    <div key={index} className="border-l-4 border-emerald-500 pl-6 space-y-2">
+                      <h3 className="text-2xl font-black text-slate-800">{work.currentCompanyName || "Company Name Not Set"}</h3>
+                      <p className="text-indigo-600 font-bold text-lg">{work.jobDepartment} • {work.jobIndustry}</p>
+                      <div className="flex flex-wrap gap-4 text-sm font-bold text-slate-500">
+                        <span className="flex items-center gap-1 bg-slate-100 px-3 py-1 rounded-full"><Calendar size={14}/> {work.jobFromDate} to {work.jobToDate || "Present"}</span>
+                        <span className="flex items-center gap-1 bg-slate-100 px-3 py-1 rounded-full"><User size={14}/> {work.presentEmploymentStatus}</span>
+                      </div>
+                      <div className="mt-4">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-1">Role Description</p>
+                        <p className="text-slate-600 leading-relaxed font-medium bg-slate-50 p-4 rounded-xl">{work.jobDescription || "No description provided."}</p>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-4 border-t border-slate-100">
+                        <PreviewItem label="Current CTC" value={work.lastSalary} />
+                        <PreviewItem label="Expected CTC" value={work.expectedSalary} />
+                        <PreviewItem label="Notice Period" value={work.noticePeriod} />
+                      </div>
+                    </div>
+                  ) : (
+                    <div key={index} className="relative group bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                      {workExperiences.length > 1 && (
+                        <button type="button" onClick={() => removeWork(index)} className="absolute -top-3 -right-3 bg-white text-rose-500 p-2 rounded-full shadow-md border border-rose-100 hover:bg-rose-50 transition-all opacity-0 group-hover:opacity-100 z-10">
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <InputField label="Current/Last Company" name="currentCompanyName" value={work.currentCompanyName} onChange={(e) => handleWorkChange(index, e)} />
+                        <SelectField label="Department" name="jobDepartment" options={dropdownOptions.jobDepartment} value={work.jobDepartment} onChange={(e) => handleWorkChange(index, e)} />
+                        <SelectField label="Industry" name="jobIndustry" options={dropdownOptions.jobCategory} value={work.jobIndustry} onChange={(e) => handleWorkChange(index, e)} />
+                        <InputField label="From Date" name="jobFromDate" type="date" value={work.jobFromDate} onChange={(e) => handleWorkChange(index, e)} />
+                        <InputField label="To Date" name="jobToDate" type="date" value={work.jobToDate} onChange={(e) => handleWorkChange(index, e)} />
+                        <SelectField label="Employment Status" name="presentEmploymentStatus" options={dropdownOptions.experienceLevel} value={work.presentEmploymentStatus} onChange={(e) => handleWorkChange(index, e)} />
+                        <InputField label="Current CTC" name="lastSalary" value={work.lastSalary} onChange={(e) => handleWorkChange(index, e)} />
+                        <InputField label="Expected CTC" name="expectedSalary" value={work.expectedSalary} onChange={(e) => handleWorkChange(index, e)} />
+                        <SelectField label="Notice Period" name="noticePeriod" options={["Immediate", "15 Days", "30 Days", "45 Days", "60 Days", "90 Days"]} value={work.noticePeriod} onChange={(e) => handleWorkChange(index, e)} />
+                        <div className="md:col-span-3">
+                          <InputField label="Job Description" name="jobDescription" value={work.jobDescription} onChange={(e) => handleWorkChange(index, e)} />
+                        </div>
+                      </div>
+                    </div>
+                  )
+                ))}
+              </div>
+            </div>
+
+            {/* 5. AWARDS & RECOGNITION */}
             <div className="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-md">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                 <div className="flex items-center gap-4">
@@ -613,7 +714,7 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* 7. SKILLS & SOCIALS */}
+            {/* 6. SKILLS & SOCIALS */}
             <div className="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-md">
               <div className="flex items-center gap-4 mb-8">
                 <div className="p-3 bg-purple-50 text-purple-600 rounded-xl"><Globe size={22}/></div>
@@ -662,7 +763,7 @@ export default function ProfilePage() {
               )}
             </div>
 
-            {/* 8. DOCUMENTS */}
+            {/* 7. DOCUMENTS */}
             {!isPreview && (
               <div className="bg-white rounded-[2rem] p-8 border border-slate-200 shadow-md">
                 <div className="flex items-center gap-4 mb-8">

@@ -104,31 +104,48 @@ export default function ManageJobs() {
   );
 }
 
-// --- Accordion Card ---
 function JobAccordionCard({ job, onDelete, onEdit }) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
     <div className={`bg-white rounded-[24px] border transition-all duration-500 overflow-hidden ${isOpen ? 'border-indigo-500 shadow-2xl ring-4 ring-indigo-50' : 'border-slate-100 shadow-sm hover:border-slate-200'}`}>
-      <div onClick={() => setIsOpen(!isOpen)} className="p-4 sm:p-6 lg:p-7 cursor-pointer flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3 sm:gap-5 min-w-0">
-          <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center transition-all duration-500 shrink-0 ${isOpen ? 'bg-indigo-600 text-white rotate-6' : 'bg-indigo-50 text-indigo-600'}`}>
-            <Briefcase size={24} />
-          </div>
-          <div className="min-w-0">
-            <h3 className="text-base sm:text-xl font-black text-slate-900 truncate leading-tight">{job.title}</h3>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5">
-               <span className="flex items-center gap-1 text-[10px] sm:text-xs font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded-md"><MapPin size={12}/> {job.location}</span>
-               <span className="flex items-center gap-1 text-[10px] sm:text-xs font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-md"><Clock size={12}/> {job.jobType}</span>
+      <div onClick={() => setIsOpen(!isOpen)} className="p-4 sm:p-6 lg:p-7 cursor-pointer">
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 sm:gap-5 min-w-0">
+            <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center transition-all duration-500 shrink-0 ${isOpen ? 'bg-indigo-600 text-white rotate-6' : 'bg-indigo-50 text-indigo-600'}`}>
+              <Briefcase size={24} />
+            </div>
+            <div className="min-w-0">
+              <h3 className="text-base sm:text-xl font-black text-slate-900 truncate leading-tight">{job.title}</h3>
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5">
+                 <span className="flex items-center gap-1 text-[10px] sm:text-xs font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded-md"><MapPin size={12}/> {job.location}</span>
+                 <span className="flex items-center gap-1 text-[10px] sm:text-xs font-bold text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-md"><Clock size={12}/> {job.jobType}</span>
+              </div>
             </div>
           </div>
+          <div className={`p-2 rounded-full transition-all shrink-0 ${isOpen ? 'bg-indigo-50 text-indigo-600 rotate-180' : 'text-slate-300'}`}>
+            <ChevronDown size={24} />
+          </div>
         </div>
-        <div className={`p-2 rounded-full transition-all shrink-0 ${isOpen ? 'bg-indigo-50 text-indigo-600 rotate-180' : 'text-slate-300'}`}>
-          <ChevronDown size={24} />
+
+        {/* --- આ નવો વિભાગ: જે કાર્ડની ઉપર જ (બહાર) વિગતો બતાવશે --- */}
+        <div className="grid grid-cols-3 gap-2 mt-5 pt-4 border-t border-slate-50">
+          <div className="text-center">
+            <p className="text-[9px] uppercase font-black text-slate-400 tracking-wider">Package</p>
+            <p className="text-xs sm:text-sm font-bold text-emerald-600">{job.salaryRange}</p>
+          </div>
+          <div className="text-center border-x border-slate-100">
+            <p className="text-[9px] uppercase font-black text-slate-400 tracking-wider">Experience</p>
+            <p className="text-xs sm:text-sm font-bold text-slate-700">{job.experienceLevel}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-[9px] uppercase font-black text-slate-400 tracking-wider">Deadline</p>
+            <p className="text-xs sm:text-sm font-bold text-rose-500">{new Date(job.deadline).toLocaleDateString()}</p>
+          </div>
         </div>
       </div>
 
-      <div className={`transition-all duration-500 ease-in-out ${isOpen ? 'max-h-[2000px] opacity-100 py-2' : 'max-h-0 opacity-0 overflow-hidden'}`}>
+      <div className={`transition-all duration-500 ease-in-out ${isOpen ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0 overflow-hidden'}`}>
         <div className="px-4 sm:px-7 pb-6 sm:pb-8">
           <div className="pt-6 border-t border-slate-100 grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="space-y-4">
@@ -145,22 +162,6 @@ function JobAccordionCard({ job, onDelete, onEdit }) {
                   {(job.skills || job.requirements || []).map((skill, idx) => (
                     <span key={idx} className="bg-white border border-slate-200 px-4 py-2 rounded-xl text-xs font-bold text-slate-600 shadow-sm">{skill}</span>
                   ))}
-                </div>
-              </div>
-              <div className="bg-slate-900 p-6 rounded-[24px] text-white shadow-xl relative overflow-hidden group">
-                <div className="space-y-4 relative z-10">
-                  <div className="flex justify-between items-center text-xs sm:text-sm">
-                    <span className="opacity-60">Package</span>
-                    <span className="text-emerald-400 font-black">{job.salaryRange}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-xs sm:text-sm">
-                    <span className="opacity-60">Experience</span>
-                    <span className="font-black text-slate-100">{job.experienceLevel}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-xs sm:text-sm">
-                    <span className="opacity-60">Deadline</span>
-                    <span className="font-black text-rose-400">{new Date(job.deadline).toLocaleDateString()}</span>
-                  </div>
                 </div>
               </div>
             </div>
@@ -186,7 +187,7 @@ function JobAccordionCard({ job, onDelete, onEdit }) {
   );
 }
 
-// --- Edit Job Modal ---
+// --- Edit Job Modal (Updated with All Fields) ---
 function EditJobModal({ job, onClose, onSuccess }) {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -194,7 +195,7 @@ function EditJobModal({ job, onClose, onSuccess }) {
     location: job.location || "",
     salaryRange: job.salaryRange || "",
     description: job.description || "",
-    requirements: job.skills?.join(", ") || job.requirements?.join(", ") || "",
+    requirements: Array.isArray(job.skills) ? job.skills.join(", ") : (Array.isArray(job.requirements) ? job.requirements.join(", ") : ""),
     jobType: job.jobType || "",
     experienceLevel: job.experienceLevel || "",
     deadline: job.deadline ? new Date(job.deadline).toISOString().split('T')[0] : ""
@@ -204,7 +205,6 @@ function EditJobModal({ job, onClose, onSuccess }) {
     e.preventDefault();
     setLoading(true);
     try {
-      // ✅ Method PATCH માંથી બદલીને PUT કરી (API સાથે મેચ કરવા માટે)
       const res = await fetch("/api/recruiter/jobs/post", {
         method: "PUT", 
         headers: { "Content-Type": "application/json" },
@@ -258,6 +258,27 @@ function EditJobModal({ job, onClose, onSuccess }) {
             <div>
               <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider ml-1">Salary Range</label>
               <input type="text" className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl font-bold text-slate-900 outline-none mt-1.5" value={formData.salaryRange} onChange={(e) => setFormData({...formData, salaryRange: e.target.value})} />
+            </div>
+            <div>
+              <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider ml-1">Job Type</label>
+              <select className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl font-bold text-slate-900 outline-none mt-1.5" value={formData.jobType} onChange={(e) => setFormData({...formData, jobType: e.target.value})}>
+                <option value="Full-time">Full-time</option>
+                <option value="Part-time">Part-time</option>
+                <option value="Contract">Contract</option>
+                <option value="Internship">Internship</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider ml-1">Experience Level</label>
+              <input type="text" className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl font-bold text-slate-900 outline-none mt-1.5" value={formData.experienceLevel} onChange={(e) => setFormData({...formData, experienceLevel: e.target.value})} placeholder="e.g. 2-4 Years" />
+            </div>
+            <div className="md:col-span-2">
+              <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider ml-1">Deadline Date</label>
+              <input type="date" className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl font-bold text-slate-900 outline-none mt-1.5" value={formData.deadline} onChange={(e) => setFormData({...formData, deadline: e.target.value})} required />
+            </div>
+            <div className="md:col-span-2">
+              <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider ml-1">Requirements / Skills (Comma separated)</label>
+              <input type="text" className="w-full bg-slate-50 border border-slate-200 p-4 rounded-2xl font-bold text-slate-900 outline-none mt-1.5" value={formData.requirements} onChange={(e) => setFormData({...formData, requirements: e.target.value})} placeholder="React, Node.js, Tailwind..." />
             </div>
           </div>
 

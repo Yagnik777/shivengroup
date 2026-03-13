@@ -21,6 +21,7 @@ export default function SidebarLayout({ children }) {
     { name: "Excel-candidates", href: "/admin/excel-candidates" },
     { name: "Recruiter Manager", href: "/admin/recruiters" },
     { name: "Service Providers", href: "/admin/serviceproviders" },
+    { name:"Mailing System", href:"/admin/Mailing"}
    
   ];
 

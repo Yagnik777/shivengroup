@@ -7,10 +7,10 @@ export default function AdminDropdownManager() {
   const [value, setValue] = useState("");
   const [loading, setLoading] = useState(true);
 
-  // નવી ફિલ્ડ્સ: experienceLevel અને jobCategory અહીં એડ કરી છે
+  // નવી ફિલ્ડ્સ: profession_recruiter અહીં એડ કરી છે
   const types = [
     // --- Candidate Fields ---
-    { id: "profession", label: "Profession" },
+    { id: "profession", label: "Profession (Candidate)" }, // કેન્ડિડેટ માટે
     { id: "position", label: "Desired Position" },
     { id: "reference", label: "Reference" },
     { id: "jobIndustry", label: "Job Industry (Candidate)" },
@@ -18,9 +18,11 @@ export default function AdminDropdownManager() {
     { id: "jobDepartment", label: "Job Department (Candidate)" },
 
     // --- Recruiter / Company Profile Fields ---
+    { id: "profession_recruiter", label: "🏢 Company Profession (Recruiter)" }, // ✅ નવું ફિલ્ડ રિક્રુટર માટે
     { id: "industry", label: "🏢 Company Industry (Recruiter)" },
     { id: "department", label: "🏢 Company Department (Recruiter)" },
     { id: "size", label: "🏢 Company Size (Recruiter)" },
+    { id: "designation", label: "🏢 Designation (Recruiter Profile)" },
 
     // --- Job Post Dynamic Fields (તમારા ફોર્મ માટે) ---
     { id: "jobCategory", label: "💼 Job Category (Post Job)" },
@@ -66,7 +68,6 @@ export default function AdminDropdownManager() {
   const handleDelete = async (id) => {
     if (!confirm("Delete this value?")) return;
     try {
-      // API Route મુજબ DELETE URL
       const res = await fetch(`/api/dropdowns?id=${id}`, { method: "DELETE" });
       if (res.ok) {
         setDropdowns((prev) => prev.filter((d) => d._id !== id));

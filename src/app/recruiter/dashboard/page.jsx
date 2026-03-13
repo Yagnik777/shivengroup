@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react"; // useRef ઉમેર્યું
 import { useSession } from "next-auth/react";
 import RecruiterSidebar from '@/components/RecruiterSidebar';
 import { Loader2, Ban, Clock, CheckCircle2, Briefcase, Users, Calendar, Award } from "lucide-react";
@@ -14,35 +14,46 @@ export default function RecruiterDashboard() {
     interviews: []
   });
   const [loading, setLoading] = useState(true);
+  
+  // આ રેફરન્સ ટ્રેક રાખશે કે ડેટા એકવાર આવી ગયો છે કે નહીં
+  const hasFetched = useRef(false);
 
   useEffect(() => {
-    const fetchAllData = async () => {
+    const fetchDashboardData = async () => {
+      // જો એકવાર ડેટા ફેચ થઈ ગયો હોય તો બીજી વાર ફંક્શન એક્ઝિક્યુટ નહીં થાય
+      if (hasFetched.current) return;
+
       if (session?.user?.email) {
         try {
-          // 1. Fetch Recruiter Status
-          const res = await fetch(`/api/admin/recruiters?email=${session.user.email}`);
-          const data = await res.json();
+          setLoading(true);
           
-          if (data.success) {
-            setDbUser(data.recruiter);
-            
-            // 2. જો Approved હોય તો જ બાકીનો ડેટા લાવવો (Jobs, Apps વગેરે)
-            if (data.recruiter.isApproved) {
-              // અહીં તમે તમારી Jobs API કોલ કરી શકો છો
-              // અત્યારે હું ડેટાને ડાયનેમિકલી સેટ કરવા માટેનું સ્ટ્રક્ચર આપું છું
+          // ૧. એક જ વાર પ્રોફાઇલ સ્ટેટસ ચેક કરો
+          const statusRes = await fetch(`/api/admin/recruiters?email=${session.user.email}`);
+          const statusData = await statusRes.json();
+          setDbUser(statusData.recruiter);
+
+          // ૨. જો એપ્રૂવ્ડ હોય તો જ નવી Dashboard API માંથી ડેટા લાવો
+          if (statusData.recruiter?.isApproved) {
+            const dashRes = await fetch(`/api/recruiter/dashboard`);
+            const dashData = await dashRes.json();
+
+            if (dashData.success) {
               setDashboardData({
                 stats: [
-                  { label: "Active Jobs", value: data.recruiter.jobsCount || "0", icon: <Briefcase size={20}/>, color: "bg-blue-50 text-blue-600" },
-                  { label: "Total Applications", value: data.recruiter.appsCount || "0", icon: <Users size={20}/>, color: "bg-indigo-50 text-indigo-600" },
-                  { label: "Interviews", value: "0", icon: <Calendar size={20}/>, color: "bg-purple-50 text-purple-600" },
-                  { label: "Hired", value: "0", icon: <Award size={20}/>, color: "bg-emerald-50 text-emerald-600" },
+                  { label: "Active Jobs", value: dashData.stats.jobsCount, icon: <Briefcase size={20}/>, color: "bg-blue-50 text-blue-600" },
+                  { label: "Total Applications", value: dashData.stats.appsCount, icon: <Users size={20}/>, color: "bg-indigo-50 text-indigo-600" },
+                  { label: "Pending Review", value: dashData.stats.pendingCount, icon: <Clock size={20}/>, color: "bg-amber-50 text-amber-600" },
+                  { label: "Hired", value: dashData.stats.hiredCount, icon: <Award size={20}/>, color: "bg-emerald-50 text-emerald-600" },
                 ],
-                // તમારી API માંથી આવતી Jobs અહીં આવશે
-                recentJobs: data.recruiter.recentJobs || [], 
-                interviews: [] 
+                recentJobs: dashData.recentJobs || [],
+                interviews: dashData.interviews || [] 
               });
             }
           }
+          
+          // ફેચિંગ પૂરું થયું એટલે true કરી દો
+          hasFetched.current = true;
+
         } catch (err) {
           console.error("Error fetching dashboard data:", err);
         } finally {
@@ -50,17 +61,15 @@ export default function RecruiterDashboard() {
         }
       }
     };
-    if (authStatus === "authenticated") fetchAllData();
+
+    if (authStatus === "authenticated") fetchDashboardData();
   }, [session, authStatus]);
 
-  // Loading, Rejected, Pending States (પેલાની જેમ જ રહેશે)
-  if (authStatus === "loading" || loading) {
+  // Loading state handling
+  if (loading && authStatus === "authenticated") {
     return (
-      <div className="h-screen flex items-center justify-center bg-[#FDFEFF]">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="animate-spin text-indigo-600" size={40} />
-          <p className="text-slate-500 font-bold animate-pulse text-sm">Loading Workspace...</p>
-        </div>
+      <div className="h-screen flex items-center justify-center bg-white">
+        <Loader2 className="animate-spin text-indigo-600" size={40} />
       </div>
     );
   }
@@ -72,7 +81,7 @@ export default function RecruiterDashboard() {
           <Ban size={40} className="text-red-500 mx-auto mb-6" />
           <h1 className="text-2xl font-black text-slate-900 mb-3">Access Denied</h1>
           <p className="text-slate-500 mb-8">Your recruiter account was not approved.</p>
-          <button onClick={() => window.location.href = 'mailto:support@resumebuilder.com'} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold">Contact Support</button>
+          <button onClick={() => window.location.href = 'mailto:support@yourdomain.com'} className="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold">Contact Support</button>
         </div>
       </div>
     );
@@ -95,7 +104,6 @@ export default function RecruiterDashboard() {
       <RecruiterSidebar activePage="dashboard" />
       <main className="flex-1 p-4 sm:p-6 md:p-8 lg:p-12 w-full overflow-x-hidden">
         
-        {/* HEADER */}
         <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
           <div>
             <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">
@@ -107,12 +115,8 @@ export default function RecruiterDashboard() {
                 </div>
             </div>
           </div>
-          <button className="w-full sm:w-auto bg-indigo-600 text-white px-6 py-4 rounded-2xl font-bold hover:bg-indigo-700 shadow-xl shadow-indigo-100 transition-all flex items-center justify-center gap-2 text-sm">
-            <span className="text-xl">+</span> Post New Job
-          </button>
         </header>
 
-        {/* DYNAMIC STATS */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           {dashboardData.stats.map((item, idx) => (
             <div key={idx} className="bg-white p-6 rounded-[32px] border border-slate-100 shadow-sm hover:shadow-md transition-all">
@@ -120,15 +124,19 @@ export default function RecruiterDashboard() {
                 {item.icon}
               </div>
               <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">{item.label}</p>
-              <h2 className="text-3xl font-black text-slate-900 mt-1">{item.value}</h2>
+              <h2 className="text-3xl font-black text-slate-900 mt-1">
+                {item.value.toString().padStart(2, '0')}
+              </h2>
             </div>
           ))}
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-          {/* DYNAMIC JOBS TABLE */}
           <div className="xl:col-span-2 bg-white p-6 md:p-10 rounded-[40px] border border-slate-100 shadow-sm overflow-hidden">
-            <h3 className="text-xl font-black text-slate-800 mb-8">Active Postings</h3>
+            <div className="flex justify-between items-center mb-8">
+                <h3 className="text-xl font-black text-slate-800">Active Postings</h3>
+                <button onClick={() => window.location.href='/recruiter/candidate'} className="text-[10px] font-black text-indigo-600 uppercase tracking-widest hover:underline">View All</button>
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left border-separate border-spacing-y-3">
                 <thead>
@@ -141,7 +149,12 @@ export default function RecruiterDashboard() {
                 <tbody>
                   {dashboardData.recentJobs.length > 0 ? (
                     dashboardData.recentJobs.map((job, i) => (
-                      <JobRow key={i} title={job.title} apps={job.applicationsCount} status={job.status} />
+                      <JobRow 
+                        key={job._id || i} 
+                        title={job.title || job.role} 
+                        apps={job.applicationsCount || 0} 
+                        status={job.status || 'active'} 
+                      />
                     ))
                   ) : (
                     <tr>
@@ -152,20 +165,6 @@ export default function RecruiterDashboard() {
               </table>
             </div>
           </div>
-
-          {/* INTERVIEWS */}
-          <div className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-sm h-fit">
-            <h3 className="text-lg font-black text-slate-800 mb-6">Upcoming Interviews</h3>
-            <div className="space-y-4">
-              {dashboardData.interviews.length > 0 ? (
-                dashboardData.interviews.map((inv, i) => (
-                  <InterviewItem key={i} name={inv.name} time={inv.time} role={inv.role} />
-                ))
-              ) : (
-                <p className="text-slate-400 text-sm italic">No scheduled interviews.</p>
-              )}
-            </div>
-          </div>
         </div>
       </main>
     </div>
@@ -174,27 +173,14 @@ export default function RecruiterDashboard() {
 
 function JobRow({ title, apps, status }) {
   return (
-    <tr className="group cursor-pointer">
-      <td className="px-4 py-5 bg-slate-50/50 rounded-l-2xl font-bold text-slate-700 text-sm">{title}</td>
-      <td className="px-4 py-5 bg-slate-50/50 font-bold text-indigo-600 text-sm">{apps}</td>
-      <td className="px-4 py-5 bg-slate-50/50 rounded-r-2xl">
-        <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${status === 'active' ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-200 text-slate-400'}`}>
+    <tr className="group cursor-pointer hover:translate-x-1 transition-transform">
+      <td className="px-4 py-5 bg-slate-50/50 group-hover:bg-slate-50 rounded-l-2xl font-bold text-slate-700 text-sm">{title}</td>
+      <td className="px-4 py-5 bg-slate-50/50 group-hover:bg-slate-50 font-black text-indigo-600 text-sm">{apps}</td>
+      <td className="px-4 py-5 bg-slate-50/50 group-hover:bg-slate-50 rounded-r-2xl">
+        <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${status?.toLowerCase() === 'active' ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-200 text-slate-400'}`}>
           {status}
         </span>
       </td>
     </tr>
-  );
-}
-
-function InterviewItem({ name, time, role }) {
-  return (
-    <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-3xl border border-slate-100">
-      <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm text-lg">👤</div>
-      <div className="flex-1 min-w-0">
-        <p className="text-xs font-black text-slate-800 truncate">{name}</p>
-        <p className="text-[10px] text-indigo-600 font-bold uppercase truncate">{role}</p>
-      </div>
-      <div className="text-[10px] text-slate-400 font-black whitespace-nowrap">{time}</div>
-    </div>
   );
 }

@@ -61,7 +61,7 @@ export default function Sidebar({ activePage }) {
             <NavItem icon="📄" label="Job Placements" active={activePage === "livejobs"} />
           </Link>
           <Link href="/recruiter/candidate" onClick={() => setIsOpen(false)}>
-            <NavItem icon="👥" label="Responses" active={activePage === "Candidate"} />
+            <NavItem icon="👥" label="Responses" active={activePage === "candidate"} />
           </Link>
           {/* <Link href="/recruiter/status" onClick={() => setIsOpen(false)}>
             <NavItem icon="⏳" label="My Status" active={activePage === "status"} />
@@ -109,10 +109,10 @@ export default function Sidebar({ activePage }) {
           {/* <NavItem icon="⚙️" label="Settings" /> */}
         </nav>
 
-        <div className="mt-4 bg-slate-50 p-4 rounded-3xl border border-slate-100">
+        {/* <div className="mt-4 bg-slate-50 p-4 rounded-3xl border border-slate-100">
           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Need Help?</p>
           <button className="text-sm font-bold text-indigo-600 hover:underline">Contact Support</button>
-        </div>
+        </div> */}
       </aside>
     </>
   );

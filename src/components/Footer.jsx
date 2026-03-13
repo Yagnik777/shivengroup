@@ -78,7 +78,7 @@ export default function Footer() {
           </div>
 
           <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="md:col-span-2 bg-indigo-50/50 rounded-[2.5rem] p-8 md:p-10 flex flex-col md:flex-row items-center justify-between gap-6 border border-indigo-100/50">
+            {/* <div className="md:col-span-2 bg-indigo-50/50 rounded-[2.5rem] p-8 md:p-10 flex flex-col md:flex-row items-center justify-between gap-6 border border-indigo-100/50">
               <div className="text-center md:text-left">
                 <h4 className="text-xl font-black text-slate-900 mb-2">Subscribe to News</h4>
                 <p className="text-sm text-slate-500 font-medium">Get the latest job alerts in your inbox.</p>
@@ -93,9 +93,9 @@ export default function Footer() {
                   <ArrowRight size={20} />
                 </button>
               </div>
-            </div>
+            </div> */}
 
-            <div className="flex flex-col justify-center items-center md:items-start p-6">
+            {/* <div className="flex flex-col justify-center items-center md:items-start p-6">
                 <div className="flex items-center gap-3 text-slate-700 font-bold mb-3">
                     <div className="bg-indigo-100 p-2 rounded-lg text-indigo-600">
                         <Phone size={18} />
@@ -108,7 +108,7 @@ export default function Footer() {
                     </div>
                     <span className="text-sm">help@jobconnectpro.com</span>
                 </div>
-            </div>
+            </div> */}
           </div>
         </div>
 
@@ -145,7 +145,7 @@ export default function Footer() {
                 <Briefcase className="absolute -right-4 -bottom-4 text-white/5 group-hover:scale-125 transition-transform duration-700" size={120} />
                 <p className="text-xs font-bold text-indigo-400 mb-2 uppercase tracking-widest">Hiring?</p>
                 <h4 className="text-lg font-black leading-tight mb-4">Post a job and find top talent today.</h4>
-                <Link href="/register" className="inline-flex items-center gap-2 text-xs font-black bg-white text-slate-900 px-5 py-2.5 rounded-xl hover:bg-indigo-50 transition-colors">
+                <Link href="recruiter/register" className="inline-flex items-center gap-2 text-xs font-black bg-white text-slate-900 px-5 py-2.5 rounded-xl hover:bg-indigo-50 transition-colors">
                     Get Started <ArrowRight size={14} />
                 </Link>
              </div>
